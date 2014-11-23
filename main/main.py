@@ -1,4 +1,5 @@
 import cv2
+
 from detector import MorphologyTransformDetector, ThresholdBlurDetector
 from utils.loader import load_images
 from utils.display import display_rectangles
