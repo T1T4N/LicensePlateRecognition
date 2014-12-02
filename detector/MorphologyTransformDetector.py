@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+
 from detector import AbstractDetector
 from utils import loader, display
 
@@ -13,13 +14,20 @@ class MorphologyTransformDetector(AbstractDetector):
             self.image = image.copy()
         else:
             print("Incorrect variable type")
+            # self.kernel9 = np.ones((7, 7), np.uint8)
+            # self.kernel7 = np.ones((7, 7), np.uint8)
+            # self.kernel5 = np.ones((7, 7), np.uint8)
+            # self.
+            #
+            # kernel3 = np.ones((7, 7), np.uint8)
 
     def _check_sizes(self, candidate):
+        # TODO: Filter rectangles if too big or small, or incorrect ratio
         return True
         '''
         error = 0.4
-        # Spain car plate size: 52x11 aspect 4,7272
-        aspect = 4.7272
+        # Macedonian car plate size: 52x11 aspect 4,72727272727
+        aspect = 4.72727272727
 
         # Set a min and max area. All other patches are discarded
         min = 15*aspect*15

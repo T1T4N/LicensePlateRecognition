@@ -4,7 +4,9 @@ from matplotlib import pyplot as plt
 
 def show_image(image, title='image'):
     """Shows the cv2::Mat image in a window and waits for a key"""
+    cv2.namedWindow(title, cv2.WINDOW_NORMAL)
     cv2.imshow(title, image)
+    cv2.resizeWindow(title, 1050, 615)
     cv2.waitKey(0)
     cv2.destroyWindow(title)
     #cv2.imwrite('test.jpg', src)

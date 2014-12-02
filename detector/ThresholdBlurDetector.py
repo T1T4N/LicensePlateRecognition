@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+
 from detector import AbstractDetector
 from utils import loader, display
 
@@ -40,15 +41,15 @@ class ThresholdBlurDetector(AbstractDetector):
         blurred = cv2.GaussianBlur(thresh, (3, 3), 0)
 
         if __debug__:
-            display.show_image(blurred)
+            display.show_image(blurred, 'Blurred')
 
         edges = cv2.Canny(blurred, 100, 100, 3)
         if __debug__:
-            display.show_image(edges)
+            display.show_image(edges, 'Canny edges')
 
         contours, hierarchy = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         if __debug__:
-            self.display_contours(contours)
+            self.display_contours(contours, 'Contours')
 
         biggest = None
         max_area = 0

@@ -1,3 +1,5 @@
+import os
+
 import cv2
 
 from detector import MorphologyTransformDetector, ThresholdBlurDetector
@@ -5,24 +7,20 @@ from utils.loader import load_images
 from utils.display import display_rectangles
 
 
+def get_images_from_dir(directory):
+    ret = []
+    for file_name in os.listdir(directory):
+        if file_name.lower().endswith(".jpg"):
+            ret.append(directory + os.sep + file_name)
+    return ret
+
+
 def main():
     print('Hello')
     print('OpenCV version: %s' % cv2.__version__)
 
-    #image_names = [r'images\1.JPG', r'images\2.JPG', r'images\3.JPG', r'images\4.JPG', r'images\5.JPG', r'images\6.JPG']
-
-    # Linux version
-    #image_names = [r'images/1.JPG', r'images/2.JPG', r'images/3.JPG', r'images/4.JPG', r'images/5.JPG', r'images/6.JPG', r'images/7.JPG', r'images/8.JPG', r'images/9.JPG', r'images/10.JPG', r'images/11.JPG', r'images/12.JPG', r'images/13.JPG']
-
-    #image_names = [r'images\5.JPG']
-
-    # Linux version
-    image_names = [r'images/4.JPG']
-
-    #kernel9 = np.ones((7, 7), np.uint8)
-    #kernel7 = np.ones((7, 7), np.uint8)
-    #kernel5 = np.ones((7, 7), np.uint8)
-    #kernel3 = np.ones((7, 7), np.uint8)
+    image_names = get_images_from_dir('images')
+    # image_names = ['images' + os.sep + '5.jpg']
 
     images = load_images(image_names)
     for src in images:
