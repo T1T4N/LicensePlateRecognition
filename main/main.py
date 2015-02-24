@@ -9,6 +9,22 @@ from utils.display import display_rectangles
 from utils import display
 
 
+def get_parts_of_image(img, rects):
+    # crops the detected recatngles in an image, and tries to find if there is text
+    for rect in rects:
+        xmin = 999999
+        xmax = 0
+        ymin = 999999
+        ymax = 0
+        for point in rect:
+            xmax = max(xmax, point[0][0])
+            ymax = max(ymax, point[0][1])
+            xmin = min(xmin, point[0][0])
+            ymin = min(ymin, point[0][1])
+        # print ("pecati " + str(xmin) + " " + str(xmax) + " " + str(ymin) + " " + str(ymax))
+        process_image(img[ymin:ymax, xmin:xmax])
+
+
 def process_image(img):
     # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # cv2.bitwise_not(img, img)
@@ -104,22 +120,6 @@ def tesseract(img_name):
     print "Ocred Text: %s"%text
     print "Cofidence Level: %d %%"%conf
     api.End()
-
-
-def get_parts_of_image(img, rects):
-    # crops the detected recatngles in an image, and tries to find if there is text
-    for rect in rects:
-        xmin = 999999
-        xmax = 0
-        ymin = 999999
-        ymax = 0
-        for point in rect:
-            xmax = max(xmax, point[0][0])
-            ymax = max(ymax, point[0][1])
-            xmin = min(xmin, point[0][0])
-            ymin = min(ymin, point[0][1])
-        # print ("pecati " + str(xmin) + " " + str(xmax) + " " + str(ymin) + " " + str(ymax))
-        process_image(img[ymin:ymax, xmin:xmax])
 
 
 def main():
