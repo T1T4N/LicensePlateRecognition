@@ -6,6 +6,10 @@ from utils.display import get_parts_of_image, display_rectangles
 
 
 def main():
+    """
+    Load images from a directory and process them to extract the license plate numbers
+    """
+
     print('OpenCV version: %s' % cv2.__version__)
 
     image_names = get_images_from_dir('images')
