@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 from matplotlib import pyplot as plt
 
 
@@ -64,3 +65,61 @@ def draw_contours(image, contours):
     color = (0, 255, 0)
     cv2.drawContours(src, contours, -1, color, 1)
     show_image(src, 'Contours')
+
+
+def get_parts_of_image(img, rectangles):
+    """
+    Crops the detected rectangles from the image and tries to find any text
+
+    :param img: Source image from which to crop
+    :param rectangles: List of rectangles representing crop areas
+    :return: List of images representing the cropped areas
+    """
+
+    ret = []
+    for rect in rectangles:
+        x_min = 999999
+        x_max = 0
+        y_min = 999999
+        y_max = 0
+        for point in rect:
+            x_max = max(x_max, point[0][0])
+            y_max = max(y_max, point[0][1])
+            x_min = min(x_min, point[0][0])
+            y_min = min(y_min, point[0][1])
+        image_part = img[y_min:y_max, x_min:x_max]
+        ret.append(image_part)
+    return ret
+
+
+def process_plate_image(img):
+    """
+    Final image processing of the license plate image crop
+
+    :param img: Plate image to process
+    :return: Processed cv2::Mat image
+    """
+
+    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # cv2.bitwise_not(img, img)
+
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.adaptiveBilateralFilter(gray, (7, 7), 15)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+    show_image(thresh, 'Process 1 White')
+
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    lower = (0, 0, 0)
+    upper = (0, 0, 255)
+
+    lower = np.array(lower, dtype="uint8")
+    upper = np.array(upper, dtype="uint8")
+
+    # find the colors within the specified boundaries and apply the mask
+    mask = cv2.inRange(hsv, lower, upper)
+    output = cv2.bitwise_and(img, img, mask=mask)
+
+    # ret,gray = cv2.threshold(img, 100, 255, cv2.THRESH_BINARY)
+    # gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY)
+    show_image(output, 'Process 2 White')
+    return output

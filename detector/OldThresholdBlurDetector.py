@@ -44,7 +44,7 @@ class OldThresholdBlurDetector(AbstractDetector):
 
         contours, hierarchy = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         if __debug__:
-            display.draw_contours(contours)
+            display.draw_contours(self.image, contours)
 
         rectangles = []
         for i in contours:

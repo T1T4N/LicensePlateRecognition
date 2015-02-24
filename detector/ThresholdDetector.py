@@ -44,7 +44,7 @@ class ThresholdDetector(AbstractDetector):
         # Find the contours in the image
         contours, hierarchy = cv2.findContours(blurred_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
         if __debug__:
-            display.draw_contours(contours)
+            display.draw_contours(self.image, contours)
 
         biggest = None
         max_area = 0
