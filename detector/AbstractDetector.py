@@ -1,25 +1,28 @@
-import cv2
 from abc import ABCMeta
 from abc import abstractmethod
-from utils import display
 
 
 class AbstractDetector(object):
+    """
+    Base class from which detectors should extend
+    """
+
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def __init__(self):
-        pass
-
-    @abstractmethod
     def find_rectangles(self):
+        """
+        Find positions of the license plates in the image
+
+        :return: Array of rectangles represented as points
+        """
         pass
 
     @abstractmethod
     def _check_sizes(self, candidate):
+        """
+        Perform size check on the specified rectangle
+        :param candidate: Rectangle on which to perform the check
+        :return: True if conditions satisfied, otherwise False
+        """
         pass
-
-    def display_contours(self, contours):
-        src = self.image.copy()
-        cv2.drawContours(src, contours, -1, (0, 255, 0), 1)
-        display.show_image(src, 'Contours')

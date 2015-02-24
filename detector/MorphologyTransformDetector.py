@@ -84,7 +84,7 @@ class MorphologyTransformDetector(AbstractDetector):
         # Find the contours in the image
         contours, hierarchy = cv2.findContours(closed_otsu_thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         if __debug__:
-            self.display_contours(contours)
+            display.draw_contours(contours)
 
         rects = []
         for itc in contours:

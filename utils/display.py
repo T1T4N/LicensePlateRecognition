@@ -48,5 +48,19 @@ def display_rectangles(image, rectangles):
     """
 
     src2 = image.copy()
-    cv2.drawContours(src2, rectangles, -1, (0, 255, 0), 2)
+    color = (0, 255, 0)
+    cv2.drawContours(src2, rectangles, -1, color, 2)
     show_image(src2)
+
+
+def draw_contours(image, contours):
+    """
+    Plot specified contours on the specified image
+    :param image: cv2::Mat image on which to plot
+    :param contours: List of contours to be plotted
+    """
+
+    src = image.copy()
+    color = (0, 255, 0)
+    cv2.drawContours(src, contours, -1, color, 1)
+    show_image(src, 'Contours')
