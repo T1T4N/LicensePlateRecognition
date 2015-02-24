@@ -6,42 +6,52 @@ from utils import loader, display
 
 
 class MorphologyTransformDetector(AbstractDetector):
+    """
+    Detector that uses morphological image transformations to try and detect license plates
+    """
 
     def __init__(self, image):
+        """
+        Initialize detector with the given image
+        :param image: String or cv2::Mat object from from which to initialize detector
+        """
+
         if type(image) == str:
             self.image = loader.load_images(image)[0]
         elif type(image) == np.ndarray:
             self.image = image.copy()
         else:
-            print("Incorrect variable type")
-            # self.kernel9 = np.ones((7, 7), np.uint8)
-            # self.kernel7 = np.ones((7, 7), np.uint8)
-            # self.kernel5 = np.ones((7, 7), np.uint8)
-            # self.
-            #
-            # kernel3 = np.ones((7, 7), np.uint8)
+            raise ValueError("Incorrect variable type")
 
     def _check_sizes(self, candidate):
-        # TODO: Filter rectangles if too big or small, or incorrect ratio
-        '''
+        """
+        Check size with respect to aspect ratio of a standard license plate
+
+        :param candidate: Rectangle on which to perform the check
+        :return: True if conditions satisfied, otherwise False
+        """
+
         error = 0.4
-        # Macedonian car plate size: 52x11 aspect 4,72727272727
+        # Macedonian car plate size: 52x11c cm, aspect ratio = 4,72727272727
         aspect = 4.72727272727
 
-        # Set a min and max area. All other patches are discarded
-        min = 15*aspect*15
-        max = 125*aspect*125
+        # Set a min and max area
+        min_area = 15 * aspect * 15
+        max_area = 125 * aspect * 125
 
-        # Get only patches that match to a respect ratio.
-        rmin = aspect-aspect*error
-        rmax = aspect+aspect*error
+        # Set aspect ratios with account to error.
+        ratio_min = aspect - aspect * error
+        ratio_max = aspect + aspect * error
 
-        area = candidate[0][0] * candidate[0][1]
-        r = float(candidate[0][0]) / float(candidate[0][1])
-        if r < 1:
-            r = 1/r
+        candidate_area = candidate[0][0] * candidate[0][1]
+        candidate_ratio = float(candidate[0][0]) / float(candidate[0][1])
+        if candidate_ratio < 1:
+            candidate_ratio = 1 / candidate_ratio
 
-        if (area < min or area > max) or (r < rmin or r > rmax):
+        # TODO: Filter too big or too small rectangles or with incorrect ratio
+        '''
+        if (candidate_area < min_area or candidate_area > max_area)
+            or (candidate_ratio < ratio_min or candidate_ratio > ratio_max):
             return False
         else:
             return True
@@ -49,35 +59,42 @@ class MorphologyTransformDetector(AbstractDetector):
         return True
 
     def find_rectangles(self):
-        # create a grayscale version of the image
+        # self.kernel9 = np.ones((7, 7), np.uint8)
+        # self.kernel7 = np.ones((7, 7), np.uint8)
+        # self.kernel5 = np.ones((7, 7), np.uint8)
+        # self.kernel3 = np.ones((7, 7), np.uint8)
+
+        # create a greyscale version of the image
         gray_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         # Blur the image
         gray_img = cv2.adaptiveBilateralFilter(gray_img, (11, 11), 100)
         # gray_img = cv2.bilateralFilter(gray_img, 5, 100, 100)
         # gray_img = cv2.blur(gray_img, (5, 5))
+
         if __debug__:
             display.show_image(gray_img, 'Gray')
 
         # Apply Sobel filter on the image
-        sobeled = cv2.Sobel(gray_img, cv2.CV_8U, 1, 0, ksize=3, scale=1, delta=0)
+        sobel_img = cv2.Sobel(gray_img, cv2.CV_8U, 1, 0, ksize=3, scale=1, delta=0)
         if __debug__:
-            display.show_image(sobeled, 'Sobel')
+            display.show_image(sobel_img, 'Sobel')
 
-        # Do stuff here so the white is bigger
-        # sobeled = cv2.morphologyEx(sobeled, cv2.MORPH_TOPHAT, kernel3)
-        # show_image(sobeled)
+        # TODO: Try to enlarge white area
+        # sobel_img = cv2.morphologyEx(sobel_img, cv2.MORPH_TOPHAT, kernel3)
+        # show_image(sobel_img)
 
         # Apply Otsu's Binary Thresholding
-        ret, otsu_thresholded = cv2.threshold(sobeled, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
+        ret, thresholded_img = cv2.threshold(sobel_img, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
         if __debug__:
-            display.show_image(otsu_thresholded, 'Otsu Threshold')
+            display.show_image(thresholded_img, 'Otsu Threshold')
 
-        # Create a 29x3 Kernel
-        element = cv2.getStructuringElement(cv2.MORPH_RECT, (29, 3))
+        # TODO: Variable kernel size depending on image size and/or perspective
+        k_size = (29, 3)
+        element = cv2.getStructuringElement(cv2.MORPH_RECT, k_size)
 
         # Apply the Close morphology Transformation
-        closed_otsu_thresholded = cv2.morphologyEx(otsu_thresholded, cv2.MORPH_CLOSE, element)
+        closed_otsu_thresholded = cv2.morphologyEx(thresholded_img, cv2.MORPH_CLOSE, element)
         if __debug__:
             display.show_image(closed_otsu_thresholded, 'Closed Morphology')
 
@@ -86,10 +103,10 @@ class MorphologyTransformDetector(AbstractDetector):
         if __debug__:
             display.draw_contours(contours)
 
-        rects = []
+        rectangles = []
         for itc in contours:
-            mr = cv2.minAreaRect(itc)
+            mr = cv2.minAreaRect(itc)  # Minimum enclosing rectangle
             if self._check_sizes(mr):
                 box = cv2.cv.BoxPoints(mr)
-                rects.append(np.int0(box))
-        return rects
+                rectangles.append(np.int0(box))  # Rotated minimum enclosing rectangle
+        return rectangles

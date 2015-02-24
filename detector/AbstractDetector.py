@@ -22,6 +22,7 @@ class AbstractDetector(object):
     def _check_sizes(self, candidate):
         """
         Perform size check on the specified rectangle
+
         :param candidate: Rectangle on which to perform the check
         :return: True if conditions satisfied, otherwise False
         """
