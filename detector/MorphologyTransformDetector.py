@@ -23,7 +23,6 @@ class MorphologyTransformDetector(AbstractDetector):
 
     def _check_sizes(self, candidate):
         # TODO: Filter rectangles if too big or small, or incorrect ratio
-        return True
         '''
         error = 0.4
         # Macedonian car plate size: 52x11 aspect 4,72727272727
@@ -47,6 +46,7 @@ class MorphologyTransformDetector(AbstractDetector):
         else:
             return True
         '''
+        return True
 
     def find_rectangles(self):
         # create a grayscale version of the image

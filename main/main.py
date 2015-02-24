@@ -1,21 +1,13 @@
-import os
 import numpy as np
 import cv2
 import tesseract
 import cv2.cv as cv
 
-from detector import MorphologyTransformDetector, ThresholdBlurDetector, ThresholdDetector
-from utils.loader import load_images
+from detector import ThresholdBlurDetector
+from utils.loader import load_images, get_images_from_dir
 from utils.display import display_rectangles
 from utils import display
 
-
-def get_images_from_dir(directory):
-    ret = []
-    for file_name in os.listdir(directory):
-        if file_name.lower().endswith(".jpg"):
-            ret.append(directory + os.sep + file_name)
-    return ret
 
 def process_image(img):
     # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -113,6 +105,7 @@ def tesseract(img_name):
     print "Cofidence Level: %d %%"%conf
     api.End()
 
+
 def get_parts_of_image(img, rects):
     # crops the detected recatngles in an image, and tries to find if there is text
     for rect in rects:
@@ -128,8 +121,8 @@ def get_parts_of_image(img, rects):
         # print ("pecati " + str(xmin) + " " + str(xmax) + " " + str(ymin) + " " + str(ymax))
         process_image(img[ymin:ymax, xmin:xmax])
 
+
 def main():
-    print('Hello')
     print('OpenCV version: %s' % cv2.__version__)
 
     image_names = get_images_from_dir('images')
