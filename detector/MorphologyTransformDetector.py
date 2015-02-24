@@ -15,13 +15,7 @@ class MorphologyTransformDetector(AbstractDetector):
         Initialize detector with the given image
         :param image: String or cv2::Mat object from from which to initialize detector
         """
-
-        if type(image) == str:
-            self.image = loader.load_images(image)[0]
-        elif type(image) == np.ndarray:
-            self.image = image.copy()
-        else:
-            raise ValueError("Incorrect variable type")
+        self.image = loader.load_image(image)
 
     def _check_sizes(self, candidate):
         """
@@ -65,18 +59,18 @@ class MorphologyTransformDetector(AbstractDetector):
         # self.kernel3 = np.ones((7, 7), np.uint8)
 
         # create a greyscale version of the image
-        gray_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        grey_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         # Blur the image
-        gray_img = cv2.adaptiveBilateralFilter(gray_img, (11, 11), 100)
-        # gray_img = cv2.bilateralFilter(gray_img, 5, 100, 100)
-        # gray_img = cv2.blur(gray_img, (5, 5))
+        grey_img = cv2.adaptiveBilateralFilter(grey_img, (11, 11), 100)
+        # grey_img = cv2.bilateralFilter(grey_img, 5, 100, 100)
+        # grey_img = cv2.blur(grey_img, (5, 5))
 
         if __debug__:
-            display.show_image(gray_img, 'Gray')
+            display.show_image(grey_img, 'Grey')
 
         # Apply Sobel filter on the image
-        sobel_img = cv2.Sobel(gray_img, cv2.CV_8U, 1, 0, ksize=3, scale=1, delta=0)
+        sobel_img = cv2.Sobel(grey_img, cv2.CV_8U, 1, 0, ksize=3, scale=1, delta=0)
         if __debug__:
             display.show_image(sobel_img, 'Sobel')
 

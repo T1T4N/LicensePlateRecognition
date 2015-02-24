@@ -1,20 +1,7 @@
 import os
 
 import cv2
-
-
-def load_images(filenames):
-    """
-    Load images represented by an array of filenames
-
-    :param filenames: List of strings holding filenames of the images
-    :return: List of cv2::Mat objects representing the images
-    """
-
-    ret = []
-    for fn in filenames:
-        ret.append(cv2.imread(fn))
-    return ret
+import numpy as np
 
 
 def get_images_from_dir(directory):
@@ -31,3 +18,32 @@ def get_images_from_dir(directory):
         if file_name.lower().endswith(".jpg"):
             ret.append(directory + os.sep + file_name)
     return ret
+
+
+def load_images(filenames):
+    """
+    Load images represented by an array of filenames
+
+    :param filenames: List of strings holding filenames of the images
+    :return: List of cv2::Mat objects representing the images
+    """
+
+    ret = []
+    for fn in filenames:
+        ret.append(cv2.imread(fn))
+    return ret
+
+
+def load_image(image):
+    """
+
+    :param image: String or cv2::Mat object from from which to initialize detector
+    :return: cv2::Mat object representing the picture
+    """
+
+    if type(image) == str:
+        return load_images(image)[0]
+    elif type(image) == np.ndarray:
+        return image.copy()
+    else:
+        raise ValueError("Incorrect variable type")

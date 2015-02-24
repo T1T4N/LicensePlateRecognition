@@ -1,19 +1,11 @@
 import numpy as np
-
 import matplotlib.pyplot as plt
-
 import matplotlib.image as mpimg
-from PIL import Image 
-from scipy import ndimage
-
-from scipy import misc
-
-
-
-
-
-
 import pylab
+
+from PIL import Image
+from scipy import ndimage
+from scipy import misc
 
 pic_dir = 'D:\Projects\LicensePlateRecognition\main\\'
 file_name = 'res.jpg'

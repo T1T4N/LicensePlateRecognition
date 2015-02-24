@@ -8,50 +8,43 @@ from utils import loader, display
 class ThresholdDetector(AbstractDetector):
 
     def __init__(self, image):
-        if type(image) == str:
-            self.image = loader.load_images(image)[0]
-        elif type(image) == np.ndarray:
-            self.image = image.copy()
-        else:
-            print("Incorrect variable type")
+        self.image = loader.load_image(image)
 
     def _check_sizes(self, candidate):
         return True
 
     def find_rectangles(self):
-        """Finds the contours which are convex rectangles
-        :returns The a list of all rectangle contours"""
+        """
+        Find the contours which are convex rectangles
 
-        # create a grayscale version of the image
-        gray_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        :return: List of all found rectangle contours
+        """
 
-        # # Blur the image
-        # gray_img = cv2.bilateralFilter(gray_img, 5, 100, 100)
+        # create a greyscale version of the image
+        grey_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
-        gray_img = cv2.adaptiveBilateralFilter(gray_img, (7, 7), 15) #75
-        # gray_img = cv2.adaptiveBilateralFilter(gray_img, (3, 3), 100) #so dvoen blur se dobivat podobri rezultati, vekje istaknatite rabovi uste povekje se zadebeluvaat
+        # Blur the image
+        grey_img = cv2.adaptiveBilateralFilter(grey_img, (7, 7), 15)  # 75
 
+        # So dvoen blur se dobivat podobri rezultati, vekje istaknatite rabovi uste povekje se zadebeluvaat
+        # grey_img = cv2.adaptiveBilateralFilter(grey_img, (3, 3), 100)
 
-        # gray_img = cv2.GaussianBlur(gray_img, (3,3), 3)
-        if __debug__:
-            display.show_image(gray_img, 'Gray')
-
-        thresh = cv2.adaptiveThreshold(gray_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+        # grey_img = cv2.GaussianBlur(grey_img, (3,3), 3)
 
         if __debug__:
-            display.show_image(thresh, 'Threshold')
+            display.show_image(grey_img, 'Gray')
 
+        thresh_img = cv2.adaptiveThreshold(grey_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
 
+        if __debug__:
+            display.show_image(thresh_img, 'Threshold')
 
-
-        blurred = thresh
+        blurred_img = thresh_img
 
         # Find the contours in the image
-        contours, hierarchy = cv2.findContours(blurred
-                                               , cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+        contours, hierarchy = cv2.findContours(blurred_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
         if __debug__:
-            self.display_contours(contours)
-
+            display.draw_contours(contours)
 
         biggest = None
         max_area = 0
@@ -70,41 +63,46 @@ class ThresholdDetector(AbstractDetector):
 
         return rectangles
 
-    def text_detection_mser(img_name):
-        # finding text in an image with MSER
-        img=cv2.imread(img_name)
+    def text_detection_mser(self, img_name):
+        """
+        Find text in an image with MSER
+
+        :param img_name: String containing the name of the image
+        :return:
+        """
+
+        img = cv2.imread(img_name)
         mser = cv2.MSER(_min_area=150, _max_area=2000)
 
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         vis = img.copy()
 
         regions = mser.detect(gray, None)
-        mserRegionsPixels = np.concatenate(regions, axis=0)
+        mser_regions_pixels = np.concatenate(regions, axis=0)
+        mser_mask = np.zeros((len(gray), len(gray[0])))  # Ne mozi so dtype=int izleguva cela slika crna
 
-        mserMask = np.zeros((len(gray), len(gray[0]))) # ne mozi so dtype=int izleguva cela slika crna
-        ind = np.add(mserRegionsPixels[:,1],(mserRegionsPixels[:,0]-1)*len(mserMask))
+        ind = np.add(mser_regions_pixels[:, 1], (mser_regions_pixels[:, 0] - 1) * len(mser_mask))
         for i in ind:
-            length = len(mserMask)
+            length = len(mser_mask)
             col = int(i/length)
             row = i - (col*length)
             col += 1
-            mserMask[row, col] = 1
-
+            mser_mask[row, col] = 1
 
         # hulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in regions]
         # cv2.polylines(gray, hulls, 1, (0, 255, 0))
-        # print mserMask.shape
+        # print mser_mask.shape
         edge = cv2.Canny(gray, 255, 255)
 
-        edgeAndMSERIntersection = np.zeros((len(edge), len(edge[0])))
+        edge_and_mser_intersection = np.zeros((len(edge), len(edge[0])))
         for i in range(len(edge)):
             for j in range(len(edge[0])):
-                if edge[i, j] >= 1 and mserMask[i, j] == 1:
-                    edgeAndMSERIntersection[i, j] = 1
+                if edge[i, j] >= 1 and mser_mask[i, j] == 1:
+                    edge_and_mser_intersection[i, j] = 1
 
-        #dialtion
-        kernel = np.ones((1,1),np.uint8)
-        closing = cv2.morphologyEx(edgeAndMSERIntersection, cv2.MORPH_OPEN, kernel)
+        # Dilation
+        kernel = np.ones((1, 1), np.uint8)
+        closing = cv2.morphologyEx(edge_and_mser_intersection, cv2.MORPH_OPEN, kernel)
 
-        cv2.imshow('img', closing )
+        cv2.imshow('img', closing)
         cv2.waitKey(0)
