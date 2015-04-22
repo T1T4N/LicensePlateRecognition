@@ -100,6 +100,7 @@ class MorphologyTransformDetector(AbstractDetector):
         rectangles = []
         for itc in contours:
             mr = cv2.minAreaRect(itc)  # Minimum enclosing rectangle
+            # itc = (top-left x, top-left y), (width, height), angle-of-rotation
             if self._check_sizes(mr):
                 box = cv2.cv.BoxPoints(mr)
                 rectangles.append(np.int0(box))  # Rotated minimum enclosing rectangle
