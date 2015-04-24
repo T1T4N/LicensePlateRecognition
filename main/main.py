@@ -1,10 +1,9 @@
-import os
-
 import cv2
 
+import os
 from detector import ThresholdBlurDetector
-from utils.loader import load_images
-from utils.display import get_parts_of_image, display_rectangles
+from utils.loader import load_images, get_images_from_dir
+from utils.display import get_parts_of_image, display_rectangles, show_image
 
 
 def main():

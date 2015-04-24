@@ -3,8 +3,9 @@ import math
 import cv2
 import numpy as np
 
+from PIL import Image
 from detector import AbstractDetector
-from utils import loader, display
+from utils import loader, display, hq2x
 
 
 class ThresholdBlurDetector(AbstractDetector):
@@ -94,12 +95,20 @@ class ThresholdBlurDetector(AbstractDetector):
     def _deskew_lines(self, plate):
         angle_rad = 0.0
         img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
-        height, width = plate.shape
+
+        # hq2x algorithm
+        source = Image.fromarray(plate)
+        dest = hq2x.hq2x(source)
+        img2x = np.array(dest)
 
         display.show_image(img, resize=True)
-        disp_img = img
+        display.show_image(img2x, resize=True)
 
-        lines = cv2.HoughLinesP(plate, 1, np.pi / 180, 100, minLineLength=3 * width / 4, maxLineGap=20)
+        img = cv2.cvtColor(img2x, cv2.COLOR_BGR2GRAY)
+        disp_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+        height, width = img.shape
+
+        lines = cv2.HoughLinesP(img, 1, np.pi / 180, 100, minLineLength=3 * width / 4, maxLineGap=20)
         if lines is not None and len(lines) > 0:
             for i in range(len(lines[0])):
                 line = lines[0, i]
