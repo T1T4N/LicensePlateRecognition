@@ -71,54 +71,55 @@ class ThresholdBlurDetector(AbstractDetector):
             mr = cv2.minAreaRect(ct)  # Minimum enclosing rectangle
             box = cv2.cv.BoxPoints(mr)
             box = np.int0(box)
-            if len(box) == 4:
-                box_points = [(box[i, 0], box[i, 1]) for i in range(len(box))]
-                box_width, box_height = image.calculate_size(box_points)
-                if box_width > 0 and box_height > 0:
-                    box_area = box_width * box_height
-                    box_ratio = box_width / box_height
-                    if box_ratio < 1:
-                        box_ratio = 1 / box_ratio
+            box_points = [(box[i, 0], box[i, 1]) for i in range(len(box))]
+            box_width, box_height = image.calculate_size(box_points)
+            if box_width > 0 and box_height > 0:
+                box_area = box_width * box_height
+                box_ratio = box_width / box_height
+                if box_ratio < 1:
+                    box_ratio = 1 / box_ratio
 
-                    # TODO: Adjust img/box area ratio
-                    if 0.5 < box_ratio < 2.5 and img_area / box_area < 45:
-                        print "Box width: %.3f, height: %.3f" % (box_width, box_height)
-                        print "Box area: %.3f" % box_area
-                        print "Box ratio: %.3f" % box_ratio
-                        # print img_area/box_area
-                        cv2.drawContours(disp_img, [box], 0, (0, 0, 255), 1)
-
-                        for (x, y) in box_points:
-                            boxes.add((x, y))
+                # TODO: Adjust img/box area ratio
+                if 0.5 < box_ratio < 2.5 and img_area / box_area < 45:
+                    print "Box width: %.3f, height: %.3f" % (box_width, box_height)
+                    print "Box area: %.3f" % box_area
+                    print "Box ratio: %.3f" % box_ratio
+                    # print img_area/box_area
+                    cv2.drawContours(disp_img, [box], 0, (0, 0, 255), 1)
+                    for (x, y) in box_points:
+                        boxes.add((x, y))
 
         x_boxes = sorted(boxes, key=lambda item: (item[0], item[1]))
-        x_boxes_rev = x_boxes[::-1]
+        if len(x_boxes) > 0:
+            x_boxes_rev = x_boxes[::-1]
 
-        border_margin = 3  # Adding a border margin to have a space of few pixels away from the edge
-        top_left = x_boxes[0] if x_boxes[0][1] > x_boxes[1][1] else x_boxes[1]
-        top_left = (top_left[0] - border_margin, top_left[1] + border_margin)
+            border_margin = 3  # Adding a border margin to have a space of few pixels away from the edge
+            top_left = x_boxes[0] if x_boxes[0][1] > x_boxes[1][1] else x_boxes[1]
+            top_left = (top_left[0] - border_margin, top_left[1] + border_margin)
 
-        bottom_left = x_boxes[0] if x_boxes[0][1] < x_boxes[1][1] else x_boxes[1]
-        bottom_left = (bottom_left[0] - border_margin, bottom_left[1] - border_margin)
+            bottom_left = x_boxes[0] if x_boxes[0][1] < x_boxes[1][1] else x_boxes[1]
+            bottom_left = (bottom_left[0] - border_margin, bottom_left[1] - border_margin)
 
-        top_right = x_boxes_rev[0] if x_boxes_rev[0][1] > x_boxes_rev[1][1] else x_boxes_rev[1]
-        top_right = (top_right[0] + border_margin, top_right[1] + border_margin)
+            top_right = x_boxes_rev[0] if x_boxes_rev[0][1] > x_boxes_rev[1][1] else x_boxes_rev[1]
+            top_right = (top_right[0] + border_margin, top_right[1] + border_margin)
 
-        bottom_right = x_boxes_rev[0] if x_boxes_rev[0][1] < x_boxes_rev[1][1] else x_boxes_rev[1]
-        bottom_right = (bottom_right[0] + border_margin, bottom_right[1] - border_margin)
+            bottom_right = x_boxes_rev[0] if x_boxes_rev[0][1] < x_boxes_rev[1][1] else x_boxes_rev[1]
+            bottom_right = (bottom_right[0] + border_margin, bottom_right[1] - border_margin)
 
-        corners = np.array([top_left, top_right, bottom_left, bottom_right], np.float32)
-        dest_points = np.array([(0, img_height), (img_width, img_height), (0, 0), (img_width, 0)], np.float32)
-        transmtx = cv2.getPerspectiveTransform(corners, dest_points)
-        disp_wrapped = cv2.warpPerspective(img, transmtx, (img_width, img_height))
+            corners = np.array([top_left, top_right, bottom_left, bottom_right], np.float32)
+            dest_points = np.array([(0, img_height), (img_width, img_height), (0, 0), (img_width, 0)], np.float32)
+            transmtx = cv2.getPerspectiveTransform(corners, dest_points)
+            disp_wrapped = cv2.warpPerspective(img, transmtx, (img_width, img_height))
 
-        cv2.circle(disp_img, top_left, 1, (255, 0, 0), thickness=2)
-        cv2.circle(disp_img, bottom_left, 1, (255, 0, 0), thickness=2)
-        cv2.circle(disp_img, top_right, 1, (255, 0, 0), thickness=2)
-        cv2.circle(disp_img, bottom_right, 1, (255, 0, 0), thickness=2)
-        display.show_image(disp_img)
-        display.show_image(disp_wrapped)
-        # display.show_image(image.hq2x_zoom(disp_wrapped))
+            cv2.circle(disp_img, top_left, 1, (255, 0, 0), thickness=2)
+            cv2.circle(disp_img, bottom_left, 1, (255, 0, 0), thickness=2)
+            cv2.circle(disp_img, top_right, 1, (255, 0, 0), thickness=2)
+            cv2.circle(disp_img, bottom_right, 1, (255, 0, 0), thickness=2)
+            display.show_image(disp_img)
+            display.show_image(disp_wrapped)
+            # display.show_image(image.hq2x_zoom(disp_wrapped))
+            return disp_wrapped
+        return img
 
     def _deskew_lines(self, plate):
         angle_rad = 0.0
@@ -213,6 +214,6 @@ class ThresholdBlurDetector(AbstractDetector):
         for processing_plate in processing_plates:
             # Skew correction using lines detection
             deskew_line = self._deskew_lines(processing_plate)
-            self._deskew_text(processing_plate)
+            deskew_text = self._deskew_text(deskew_line)
 
         return rectangles

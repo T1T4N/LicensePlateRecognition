@@ -1,9 +1,10 @@
+import os
+
 import cv2
 
-import os
 from detector import ThresholdBlurDetector
-from utils.loader import load_images, get_images_from_dir
-from utils.display import get_parts_of_image, display_rectangles, show_image
+from utils.loader import load_images
+from utils.display import get_parts_of_image, display_rectangles
 
 
 def main():
@@ -18,8 +19,7 @@ def main():
     # image_names = ['images' + os.sep + '27.jpg']
     # image_names = ['images' + os.sep + '05.jpg']
     # image_names = ['images' + os.sep + '05.jpg', 'images' + os.sep + '10.jpg', 'images' + os.sep + '11.jpg']
-
-    image_names = ['images' + os.sep + '10.jpg']
+    image_names = ['images' + os.sep + '01.jpg']
 
     images = load_images(image_names)
     for src in images:
@@ -29,7 +29,6 @@ def main():
         display_rectangles(src, rectangles)
 
         plates = get_parts_of_image(src, rectangles)
-
         for image_part in plates:
             # show_image(image_part, resize=True)
 
