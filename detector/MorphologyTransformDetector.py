@@ -17,7 +17,7 @@ class MorphologyTransformDetector(AbstractDetector):
         """
         self.image = loader.load_image(image)
 
-    def _check_sizes(self, candidate):
+    def _check_size(self, candidate, area=-1):
         """
         Check size with respect to aspect ratio of a standard license plate
 
@@ -101,7 +101,7 @@ class MorphologyTransformDetector(AbstractDetector):
         for itc in contours:
             mr = cv2.minAreaRect(itc)  # Minimum enclosing rectangle
             # itc = (top-left x, top-left y), (width, height), angle-of-rotation
-            if self._check_sizes(mr):
+            if self._check_size(mr):
                 box = cv2.cv.BoxPoints(mr)
                 rectangles.append(np.int0(box))  # Rotated minimum enclosing rectangle
         return rectangles

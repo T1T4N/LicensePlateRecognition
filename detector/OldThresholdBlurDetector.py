@@ -9,7 +9,7 @@ class OldThresholdBlurDetector(AbstractDetector):
     def __init__(self, image):
         self.image = loader.load_image(image)
 
-    def _check_sizes(self, candidate):
+    def _check_size(self, candidate, area=-1):
         return True
 
     def find_rectangles(self):

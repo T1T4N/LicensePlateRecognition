@@ -13,7 +13,7 @@ class ThresholdBlurDetector(AbstractDetector):
     def __init__(self, image):
         self.image = loader.load_image(image)
 
-    def _check_sizes(self, candidate):
+    def _check_size(self, candidate, area=-1):
         """
         Check size with respect to aspect ratio of a standard license plate
 
@@ -173,7 +173,7 @@ class ThresholdBlurDetector(AbstractDetector):
                 approx = cv2.approxPolyDP(i, 0.045*peri, True)
 
                 if len(approx) == 4 and cv2.isContourConvex(approx):
-                    if self._check_sizes(approx):
+                    if self._check_size(approx):
                         rectangles.append(approx)
                         if area > max_area:
                             biggest = approx
