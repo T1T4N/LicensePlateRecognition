@@ -3,9 +3,8 @@ import math
 import cv2
 import numpy as np
 
-from PIL import Image
 from detector import AbstractDetector
-from utils import loader, display, hq2x
+from utils import loader, display, image
 
 
 class ThresholdBlurDetector(AbstractDetector):
@@ -39,9 +38,8 @@ class ThresholdBlurDetector(AbstractDetector):
         x_coordinates = [x for x in candidate[:, 0, 0]]
         y_coordinates = [y for y in candidate[:, 0, 1]]
         coordinates = [(x_coordinates[i], y_coordinates[i]) for i in range(len(x_coordinates))]
-        coords_xsorted = sorted(coordinates, key=lambda item: (item[0], item[1]))
 
-        candidate_width, candidate_height = self._calculate_size(coords_xsorted)
+        candidate_width, candidate_height = image.calculate_size(coordinates)
 
         candidate_area = candidate_height * candidate_width
         candidate_ratio = float(candidate_width) / float(candidate_height)
@@ -61,45 +59,73 @@ class ThresholdBlurDetector(AbstractDetector):
             print "Passed\n"
             return True
 
-    def _calculate_size(self, coords):
-        """
-        Given an array of four coordinates calculates width and height of the rectangle they form
+    def _deskew_text(self, plate):
+        img = plate.copy()
+        disp_img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
+        img_height, img_width = img.shape
+        img_area = img_height * img_width
+        boxes = set([])
 
-        :param coords: An array of 4 (x, y) tuples
-        :return: A (width, height) tuple
-        """
+        contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for ct in contours:
+            mr = cv2.minAreaRect(ct)  # Minimum enclosing rectangle
+            box = cv2.cv.BoxPoints(mr)
+            box = np.int0(box)
+            if len(box) == 4:
+                box_points = [(box[i, 0], box[i, 1]) for i in range(len(box))]
+                box_width, box_height = image.calculate_size(box_points)
+                if box_width > 0 and box_height > 0:
+                    box_area = box_width * box_height
+                    box_ratio = box_width / box_height
+                    if box_ratio < 1:
+                        box_ratio = 1 / box_ratio
 
-        h1 = math.hypot(coords[0][0] - coords[1][0], coords[0][1] - coords[1][1])
-        h2 = math.hypot(coords[2][0] - coords[3][0], coords[2][1] - coords[3][1])
-        height = max(h1, h2)
+                    # TODO: Adjust img/box area ratio
+                    if 0.5 < box_ratio < 2.5 and img_area / box_area < 45:
+                        print "Box width: %.3f, height: %.3f" % (box_width, box_height)
+                        print "Box area: %.3f" % box_area
+                        print "Box ratio: %.3f" % box_ratio
+                        # print img_area/box_area
+                        cv2.drawContours(disp_img, [box], 0, (0, 0, 255), 1)
 
-        d11 = abs(coords[0][1] - coords[2][1])
-        d12 = abs(coords[0][1] - coords[3][1])
+                        for (x, y) in box_points:
+                            boxes.add((x, y))
 
-        d21 = abs(coords[1][1] - coords[2][1])
-        d22 = abs(coords[1][1] - coords[3][1])
+        x_boxes = sorted(boxes, key=lambda item: (item[0], item[1]))
+        x_boxes_rev = x_boxes[::-1]
 
-        width = -1
-        if d11 < d12:
-            width = max(width, math.hypot(coords[0][0] - coords[2][0], coords[0][1] - coords[2][1]))
-        else:
-            width = max(width, math.hypot(coords[0][0] - coords[3][0], coords[0][1] - coords[3][1]))
+        border_margin = 3  # Adding a border margin to have a space of few pixels away from the edge
+        top_left = x_boxes[0] if x_boxes[0][1] > x_boxes[1][1] else x_boxes[1]
+        top_left = (top_left[0] - border_margin, top_left[1] + border_margin)
 
-        if d21 < d22:
-            width = max(width, math.hypot(coords[1][0] - coords[2][0], coords[1][1] - coords[2][1]))
-        else:
-            width = max(width, math.hypot(coords[1][0] - coords[3][0], coords[1][1] - coords[3][1]))
+        bottom_left = x_boxes[0] if x_boxes[0][1] < x_boxes[1][1] else x_boxes[1]
+        bottom_left = (bottom_left[0] - border_margin, bottom_left[1] - border_margin)
 
-        return width, height
+        top_right = x_boxes_rev[0] if x_boxes_rev[0][1] > x_boxes_rev[1][1] else x_boxes_rev[1]
+        top_right = (top_right[0] + border_margin, top_right[1] + border_margin)
+
+        bottom_right = x_boxes_rev[0] if x_boxes_rev[0][1] < x_boxes_rev[1][1] else x_boxes_rev[1]
+        bottom_right = (bottom_right[0] + border_margin, bottom_right[1] - border_margin)
+
+        corners = np.array([top_left, top_right, bottom_left, bottom_right], np.float32)
+        dest_points = np.array([(0, img_height), (img_width, img_height), (0, 0), (img_width, 0)], np.float32)
+        transmtx = cv2.getPerspectiveTransform(corners, dest_points)
+        disp_wrapped = cv2.warpPerspective(img, transmtx, (img_width, img_height))
+
+        cv2.circle(disp_img, top_left, 1, (255, 0, 0), thickness=2)
+        cv2.circle(disp_img, bottom_left, 1, (255, 0, 0), thickness=2)
+        cv2.circle(disp_img, top_right, 1, (255, 0, 0), thickness=2)
+        cv2.circle(disp_img, bottom_right, 1, (255, 0, 0), thickness=2)
+        display.show_image(disp_img)
+        display.show_image(disp_wrapped)
+        # display.show_image(image.hq2x_zoom(disp_wrapped))
 
     def _deskew_lines(self, plate):
         angle_rad = 0.0
         img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
 
         # hq2x algorithm
-        source = Image.fromarray(plate)
-        dest = hq2x.hq2x(source)
-        img2x = np.array(dest)
+        img2x = image.hq2x_zoom(img)
 
         display.show_image(img, resize=True)
         display.show_image(img2x, resize=True)
@@ -127,6 +153,9 @@ class ThresholdBlurDetector(AbstractDetector):
             rotation_mat = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
             disp_img = cv2.warpAffine(disp_img, rotation_mat, (width, height))
             display.show_image(disp_img, resize=True)
+            img = cv2.warpAffine(img, rotation_mat, (width, height))
+
+        return img
 
     def find_rectangles(self):
         """
@@ -183,6 +212,7 @@ class ThresholdBlurDetector(AbstractDetector):
         # TODO: do not include some parts based on different parameters
         for processing_plate in processing_plates:
             # Skew correction using lines detection
-            self._deskew_lines(processing_plate)
+            deskew_line = self._deskew_lines(processing_plate)
+            self._deskew_text(processing_plate)
 
         return rectangles
