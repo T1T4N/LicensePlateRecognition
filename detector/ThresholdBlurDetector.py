@@ -1,6 +1,7 @@
 import math
 
 import cv2
+import numpy as np
 
 from detector import AbstractDetector
 from utils import loader, display
@@ -19,17 +20,20 @@ class ThresholdBlurDetector(AbstractDetector):
         :return: True if conditions satisfied, otherwise False
         """
 
-        error = 0.4
+        # TODO: Adjust error rate
+        error_min = 0.17
+        error_max = 0.32
         # Macedonian car plate size: 52x11c cm, aspect ratio = 4,72727272727
-        aspect = 4.72727272727
+        aspect = float(52) / float(11)
 
         # Set a min and max area
-        min_area = 15 * aspect * 15
-        max_area = 125 * aspect * 125
+        # TODO: Adjust coefficients for min and max area
+        min_area = 17 * aspect * 17
+        max_area = 112 * aspect * 112
 
         # Set aspect ratios with account to error.
-        min_ratio = aspect - aspect * error
-        max_ratio = aspect + aspect * error
+        min_ratio = aspect - aspect * error_min
+        max_ratio = aspect + aspect * error_max
 
         x_coordinates = [x for x in candidate[:, 0, 0]]
         y_coordinates = [y for y in candidate[:, 0, 1]]
@@ -43,14 +47,16 @@ class ThresholdBlurDetector(AbstractDetector):
         if candidate_ratio < 1:
             candidate_ratio = 1 / candidate_ratio
 
-        print "Candidate area: %f" % candidate_area
-        print "Candidate ratio: %f" % candidate_ratio
-
         if (candidate_area < min_area or candidate_area > max_area) \
                 or (candidate_ratio < min_ratio or candidate_ratio > max_ratio):
-            print "Failed\n"
+            # print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
+            # print "Candidate area: %f" % candidate_area
+            # print "Candidate ratio: %f\n" % candidate_ratio
             return False
         else:
+            print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
+            print "Candidate area: %f" % candidate_area
+            print "Candidate ratio: %f" % candidate_ratio
             print "Passed\n"
             return True
 
@@ -85,6 +91,34 @@ class ThresholdBlurDetector(AbstractDetector):
 
         return width, height
 
+    def _deskew_lines(self, plate):
+        angle_rad = 0.0
+        img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
+        height, width = plate.shape
+
+        display.show_image(img, resize=True)
+        disp_img = img
+
+        lines = cv2.HoughLinesP(plate, 1, np.pi / 180, 100, minLineLength=3 * width / 4, maxLineGap=20)
+        if lines is not None and len(lines) > 0:
+            for i in range(len(lines[0])):
+                line = lines[0, i]
+                x1, y1, x2, y2 = line[0], line[1], line[2], line[3]
+                cv2.line(disp_img, (x1, y1), (x2, y2), color=(255, 0, 0), thickness=1)
+                line_angle = math.atan2(y2 - y1, x2 - x1)
+                angle_rad += line_angle
+                print "Line angle: %.3f" % line_angle
+
+            angle_rad /= len(lines[0])
+            print "Avg angle rad: %.3f" % angle_rad
+            angle = math.degrees(angle_rad)
+            print "Avg angle deg: %.3f\n" % angle
+
+            display.show_image(disp_img, resize=True)
+            rotation_mat = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
+            disp_img = cv2.warpAffine(disp_img, rotation_mat, (width, height))
+            display.show_image(disp_img, resize=True)
+
     def find_rectangles(self):
         """
         Find the contours which are convex rectangles
@@ -93,28 +127,29 @@ class ThresholdBlurDetector(AbstractDetector):
         """
 
         # Create a greyscale version of the image
-        grey_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        processing_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         # Blur the image
-        # grey_img = cv2.bilateralFilter(grey_img, 5, 100, 100)
-        grey_img = cv2.adaptiveBilateralFilter(grey_img, (7, 7), 15)  # 75
+        # processing_img = cv2.bilateralFilter(processing_img, 5, 100, 100)
+        processing_img = cv2.adaptiveBilateralFilter(processing_img, (7, 7), 15)  # 75
 
         # So dvoen blur se dobivat podobri rezultati, vekje istaknatite rabovi uste povekje se zadebeluvaat
-        # grey_img = cv2.adaptiveBilateralFilter(grey_img, (3, 3), 100)
-        # grey_img = cv2.GaussianBlur(grey_img, (3,3), 3)
+        # processing_img = cv2.adaptiveBilateralFilter(processing_img, (3, 3), 100)
+        # processing_img = cv2.GaussianBlur(processing_img, (3,3), 3)
 
         if __debug__:
-            display.show_image(grey_img, 'Grey')
+            display.show_image(processing_img, 'Grey')
 
-        thresh_img = cv2.adaptiveThreshold(grey_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+        processing_img = cv2.adaptiveThreshold(processing_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                               cv2.THRESH_BINARY_INV, 11, 2)
 
         if __debug__:
-            display.show_image(thresh_img, 'Threshold')
+            display.show_image(processing_img, 'Threshold')
 
-        blurred_img = thresh_img
+        # Find the contours in the image. MODIFIES source image
+        processing_copy = processing_img.copy()
+        contours, hierarchy = cv2.findContours(processing_copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 
-        # Find the contours in the image
-        contours, hierarchy = cv2.findContours(blurred_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
         if __debug__:
             display.draw_contours(self.image, contours)
 
@@ -134,5 +169,11 @@ class ThresholdBlurDetector(AbstractDetector):
                         if area > max_area:
                             biggest = approx
                             max_area = area
+
+        processing_plates = display.get_parts_of_image(processing_img, rectangles)
+        # TODO: do not include some parts based on different parameters
+        for processing_plate in processing_plates:
+            # Skew correction using lines detection
+            self._deskew_lines(processing_plate)
 
         return rectangles

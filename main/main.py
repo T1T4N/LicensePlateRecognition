@@ -1,8 +1,10 @@
+import os
+
 import cv2
 
 from detector import ThresholdBlurDetector
-from utils.loader import load_images, get_images_from_dir
-from utils.display import get_parts_of_image, display_rectangles, show_image
+from utils.loader import load_images
+from utils.display import get_parts_of_image, display_rectangles
 
 
 def main():
@@ -12,8 +14,13 @@ def main():
 
     print('OpenCV version: %s' % cv2.__version__)
 
-    image_names = get_images_from_dir('images')
-    # image_names = ['images' + os.sep + '1.jpg']
+    # image_names = get_images_from_dir('images')
+    # image_names = ['images' + os.sep + '19.jpg']
+    # image_names = ['images' + os.sep + '27.jpg']
+    # image_names = ['images' + os.sep + '05.jpg']
+    # image_names = ['images' + os.sep + '05.jpg', 'images' + os.sep + '10.jpg', 'images' + os.sep + '11.jpg']
+
+    image_names = ['images' + os.sep + '10.jpg']
 
     images = load_images(image_names)
     for src in images:
@@ -25,7 +32,8 @@ def main():
         plates = get_parts_of_image(src, rectangles)
 
         for image_part in plates:
-            show_image(image_part, resize=True)
+            # show_image(image_part, resize=True)
+
             # TODO: final processing of the image before OCR
             # processed_image = process_plate_image(image_part)
 
