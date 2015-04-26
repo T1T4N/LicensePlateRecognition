@@ -60,6 +60,103 @@ class ThresholdBlurDetector(AbstractDetector):
             print "Passed\n"
             return True
 
+    def find_rectangles(self):
+        """
+        Find the contours which are convex rectangles
+
+        :return: List of all found rectangle contours
+        """
+
+        # Create a greyscale version of the image
+        processing_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+
+        # Blur the image
+        # processing_img = cv2.bilateralFilter(processing_img, 5, 100, 100)
+        processing_img = cv2.adaptiveBilateralFilter(processing_img, (7, 7), 15)  # 75
+
+        # So dvoen blur se dobivat podobri rezultati, vekje istaknatite rabovi uste povekje se zadebeluvaat
+        # processing_img = cv2.adaptiveBilateralFilter(processing_img, (3, 3), 100)
+        # processing_img = cv2.GaussianBlur(processing_img, (3,3), 3)
+
+        if __debug__:
+            display.show_image(processing_img, 'Grey')
+
+        processing_img = cv2.adaptiveThreshold(processing_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                               cv2.THRESH_BINARY_INV, 11, 2)
+
+        if __debug__:
+            display.show_image(processing_img, 'Threshold')
+
+        # Find the contours in the image. MODIFIES source image
+        processing_copy = processing_img.copy()
+        contours, hierarchy = cv2.findContours(processing_copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+
+        if __debug__:
+            display.draw_contours(self.image, contours)
+
+        biggest = None
+        max_area = 0
+        rectangles = []
+
+        for i in contours:
+            area = cv2.contourArea(i)
+            if area > 200:
+                peri = cv2.arcLength(i, True)
+                approx = cv2.approxPolyDP(i, 0.045 * peri, True)
+
+                if len(approx) == 4 and cv2.isContourConvex(approx):
+                    if self._check_size(approx):
+                        rectangles.append(approx)
+                        if area > max_area:
+                            biggest = approx
+                            max_area = area
+
+        processing_plates = display.get_parts_of_image(processing_img, rectangles)
+        # TODO: do not include some parts based on different parameters
+        for processing_plate in processing_plates:
+            # Skew correction using lines detection
+            # deskew_line = self._deskew_lines(processing_plate)
+            deskew_text = self._deskew_text(processing_plate)
+            self._segment_contours(deskew_text)
+        return rectangles
+
+    def _deskew_lines(self, plate):
+        angle_rad = 0.0
+        img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
+
+        # hq2x algorithm
+        img2x = image.hq2x_zoom(img)
+
+        display.show_image(img, resize=True)
+        display.show_image(img2x, resize=True)
+
+        img = cv2.cvtColor(img2x, cv2.COLOR_BGR2GRAY)
+        disp_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+        height, width = img.shape
+
+        lines = cv2.HoughLinesP(img, 1, np.pi / 180, 100, minLineLength=3 * width / 4, maxLineGap=20)
+        if lines is not None and len(lines) > 0:
+            for i in range(len(lines[0])):
+                line = lines[0, i]
+                x1, y1, x2, y2 = line[0], line[1], line[2], line[3]
+                cv2.line(disp_img, (x1, y1), (x2, y2), color=(255, 0, 0), thickness=1)
+                line_angle = math.atan2(y2 - y1, x2 - x1)
+                angle_rad += line_angle
+                # print "Line angle: %.3f" % line_angle
+
+            angle_rad /= len(lines[0])
+            # print "Avg angle rad: %.3f" % angle_rad
+            angle = math.degrees(angle_rad)
+            print "Avg angle deg: %.3f\n" % angle
+
+            display.show_image(disp_img, resize=True)
+            rotation_mat = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
+            disp_img = cv2.warpAffine(disp_img, rotation_mat, (width, height))
+            display.show_image(disp_img, resize=True)
+            img = cv2.warpAffine(img, rotation_mat, (width, height))
+
+        return img
+
     def _deskew_text(self, plate):
         img = plate.copy()
         disp_img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
@@ -82,9 +179,9 @@ class ThresholdBlurDetector(AbstractDetector):
 
                 # TODO: Adjust img/box area ratio
                 if 0.5 < box_ratio < 2.5 and img_area / box_area < 45:
-                    print "Box width: %.3f, height: %.3f" % (box_width, box_height)
-                    print "Box area: %.3f" % box_area
-                    print "Box ratio: %.3f" % box_ratio
+                    # print "Box width: %.3f, height: %.3f" % (box_width, box_height)
+                    # print "Box area: %.3f" % box_area
+                    # print "Box ratio: %.3f" % box_ratio
                     # print img_area/box_area
                     cv2.drawContours(disp_img, [box], 0, (0, 0, 255), 1)
                     for (x, y) in box_points:
@@ -124,49 +221,15 @@ class ThresholdBlurDetector(AbstractDetector):
             return disp_wrapped
         return img
 
-    def _deskew_lines(self, plate):
-        angle_rad = 0.0
-        img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
-
-        # hq2x algorithm
-        img2x = image.hq2x_zoom(img)
-
-        display.show_image(img, resize=True)
-        display.show_image(img2x, resize=True)
-
-        img = cv2.cvtColor(img2x, cv2.COLOR_BGR2GRAY)
-        disp_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-        height, width = img.shape
-
-        lines = cv2.HoughLinesP(img, 1, np.pi / 180, 100, minLineLength=3 * width / 4, maxLineGap=20)
-        if lines is not None and len(lines) > 0:
-            for i in range(len(lines[0])):
-                line = lines[0, i]
-                x1, y1, x2, y2 = line[0], line[1], line[2], line[3]
-                cv2.line(disp_img, (x1, y1), (x2, y2), color=(255, 0, 0), thickness=1)
-                line_angle = math.atan2(y2 - y1, x2 - x1)
-                angle_rad += line_angle
-                print "Line angle: %.3f" % line_angle
-
-            angle_rad /= len(lines[0])
-            print "Avg angle rad: %.3f" % angle_rad
-            angle = math.degrees(angle_rad)
-            print "Avg angle deg: %.3f\n" % angle
-
-            display.show_image(disp_img, resize=True)
-            rotation_mat = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
-            disp_img = cv2.warpAffine(disp_img, rotation_mat, (width, height))
-            display.show_image(disp_img, resize=True)
-            img = cv2.warpAffine(img, rotation_mat, (width, height))
-
-        return img
-
     def _segment_contours(self, plate):
         img = plate.copy()
         img2 = img.copy()
         disp_img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
         img_height, img_width = img.shape
         img_area = img_height * img_width
+
+        print "\n\nPart area: %.3f" % img_area
+
         boxes = []
         contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         for i, ct in enumerate(contours):
@@ -212,69 +275,17 @@ class ThresholdBlurDetector(AbstractDetector):
 
         labels = []
         for box in boxes_sep:
-            # display.show_image(box)
-            tr = TextRecognizer(cv2.bitwise_not(cv2.cvtColor(box, cv2.COLOR_GRAY2BGR)))
+            # box_mod = image.hq2x_zoom(cv2.cvtColor(box, cv2.COLOR_GRAY2BGR))
+            box_mod = cv2.cvtColor(box, cv2.COLOR_GRAY2BGR)
+            tr = TextRecognizer(cv2.bitwise_not(box_mod))
             text, conf = tr.find_text()
-            labels.append(text)
+            text = text.strip()
+            t2 = ""
+            for i in range(len(text)):
+                if ord(text[i]) in range(128):
+                    t2 += text[i]
+            labels.append(t2)
+            print t2, conf
+            # display.show_image(box_mod)
 
         display.multi_plot(boxes_sep, labels, 1, len(boxes_sep))
-
-    def find_rectangles(self):
-        """
-        Find the contours which are convex rectangles
-
-        :return: List of all found rectangle contours
-        """
-
-        # Create a greyscale version of the image
-        processing_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-
-        # Blur the image
-        # processing_img = cv2.bilateralFilter(processing_img, 5, 100, 100)
-        processing_img = cv2.adaptiveBilateralFilter(processing_img, (7, 7), 15)  # 75
-
-        # So dvoen blur se dobivat podobri rezultati, vekje istaknatite rabovi uste povekje se zadebeluvaat
-        # processing_img = cv2.adaptiveBilateralFilter(processing_img, (3, 3), 100)
-        # processing_img = cv2.GaussianBlur(processing_img, (3,3), 3)
-
-        if __debug__:
-            display.show_image(processing_img, 'Grey')
-
-        processing_img = cv2.adaptiveThreshold(processing_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                               cv2.THRESH_BINARY_INV, 11, 2)
-
-        if __debug__:
-            display.show_image(processing_img, 'Threshold')
-
-        # Find the contours in the image. MODIFIES source image
-        processing_copy = processing_img.copy()
-        contours, hierarchy = cv2.findContours(processing_copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
-
-        if __debug__:
-            display.draw_contours(self.image, contours)
-
-        biggest = None
-        max_area = 0
-        rectangles = []
-
-        for i in contours:
-            area = cv2.contourArea(i)
-            if area > 200:
-                peri = cv2.arcLength(i, True)
-                approx = cv2.approxPolyDP(i, 0.045*peri, True)
-
-                if len(approx) == 4 and cv2.isContourConvex(approx):
-                    if self._check_size(approx):
-                        rectangles.append(approx)
-                        if area > max_area:
-                            biggest = approx
-                            max_area = area
-
-        processing_plates = display.get_parts_of_image(processing_img, rectangles)
-        # TODO: do not include some parts based on different parameters
-        for processing_plate in processing_plates:
-            # Skew correction using lines detection
-            # deskew_line = self._deskew_lines(processing_plate)
-            deskew_text = self._deskew_text(processing_plate)
-            self._segment_contours(deskew_text)
-        return rectangles
