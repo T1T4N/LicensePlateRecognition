@@ -5,6 +5,7 @@ import numpy as np
 
 from detector import AbstractDetector
 from utils import loader, display, image
+from recognizer import TextRecognizer
 
 
 class ThresholdBlurDetector(AbstractDetector):
@@ -118,6 +119,8 @@ class ThresholdBlurDetector(AbstractDetector):
             display.show_image(disp_img)
             display.show_image(disp_wrapped)
             # display.show_image(image.hq2x_zoom(disp_wrapped))
+
+            # TODO: Return points of found boxes relative to wrapped picture
             return disp_wrapped
         return img
 
@@ -157,6 +160,64 @@ class ThresholdBlurDetector(AbstractDetector):
             img = cv2.warpAffine(img, rotation_mat, (width, height))
 
         return img
+
+    def _segment_contours(self, plate):
+        img = plate.copy()
+        img2 = img.copy()
+        disp_img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
+        img_height, img_width = img.shape
+        img_area = img_height * img_width
+        boxes = []
+        contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        for i, ct in enumerate(contours):
+            # mr = cv2.minAreaRect(ct)
+            # box = cv2.cv.BoxPoints(mr)
+            # box = np.int0(box)
+            # box_points = [(box[i, 0], box[i, 1]) for i in range(len(box))]
+            # box_width, box_height = image.calculate_size(box_points)
+
+            # TODO: Number one has ratio ~ 4.5: very thin and high
+            x, y, box_width, box_height = cv2.boundingRect(ct)
+            if box_width > 0 and box_height > 0:
+                box_area = float(box_width) * float(box_height)
+
+                box_ratio = float(box_width) / float(box_height)
+                if box_ratio < 1:
+                    box_ratio = 1 / float(box_ratio)
+
+                print "Box width: %.3f, height: %.3f" % (box_width, box_height)
+                print "Box area: %.3f" % box_area
+                print "Box ratio: %.3f" % box_ratio
+                print "Area ratio: %.3f" % (img_area / box_area)
+
+                # TODO: Square in the middle always caught, adjust box_ratio upper limit
+                if 0.5 < box_ratio < 3 and img_area / box_area < 45:
+                    print "Passed"
+                    print
+                    # TODO: Fill contour without the holes
+                    # cv2.drawContours(disp_img, [ct], 0, (255, 255, 255), thickness=-1)
+
+                    # cv2.drawContours(disp_img, [box], 0, (0, 0, 255), 1)
+                    cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (0, 255, 0), 1)
+
+                    box_points = np.array(
+                        [(x, y), (x, y + box_height), (x + box_width, y), (x + box_width, y + box_height)]
+                    )
+                    # box_points = sorted(box_points, key=lambda item: (item[0], item[1]))
+                    boxes.append(np.array(box_points))
+
+        boxes_sorted = sorted(boxes, key=lambda item: (item[0][0], item[0][1]))
+        boxes_sep = display.get_parts_of_image(img, boxes_sorted)
+        display.show_image(disp_img)
+
+        labels = []
+        for box in boxes_sep:
+            # display.show_image(box)
+            tr = TextRecognizer(cv2.bitwise_not(cv2.cvtColor(box, cv2.COLOR_GRAY2BGR)))
+            text, conf = tr.find_text()
+            labels.append(text)
+
+        display.multi_plot(boxes_sep, labels, 1, len(boxes_sep))
 
     def find_rectangles(self):
         """
@@ -213,7 +274,7 @@ class ThresholdBlurDetector(AbstractDetector):
         # TODO: do not include some parts based on different parameters
         for processing_plate in processing_plates:
             # Skew correction using lines detection
-            deskew_line = self._deskew_lines(processing_plate)
-            deskew_text = self._deskew_text(deskew_line)
-
+            # deskew_line = self._deskew_lines(processing_plate)
+            deskew_text = self._deskew_text(processing_plate)
+            self._segment_contours(deskew_text)
         return rectangles
