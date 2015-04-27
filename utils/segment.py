@@ -1,12 +1,10 @@
 import cv2
 import numpy as np
 import display
-from recognizer import TextRecognizer
 
 
 def segment_contours(plate):
     img = plate.copy()
-    img2 = img.copy()
     disp_img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
     img_height, img_width = img.shape
     img_area = img_height * img_width
@@ -57,7 +55,11 @@ def segment_contours(plate):
                 boxes.append(np.array(box_points))
             else:
                 cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (0, 0, 255), 1)
-                # display.show_image(disp_img)
+                # Fill small noise points with black color
+                if img_area / box_area > 45:
+                    cv2.drawContours(img, [ct], 0, (0, 0, 0), thickness=-1)
+                    cv2.drawContours(disp_img, [ct], 0, (0, 0, 0), thickness=-1)
+                    # display.show_image(disp_img)
 
     # Fill holes of contours in black
     for i, ct in enumerate(contours):
@@ -76,6 +78,7 @@ def segment_contours(plate):
 
     boxes_sorted = sorted(boxes, key=lambda item: (item[0][0], item[0][1]))
     boxes_sep = display.get_parts_of_image(img, boxes_sorted)
-    display.show_image(disp_img)
+    if __debug__:
+        display.show_image(disp_img)
 
     return [cv2.cvtColor(box, cv2.COLOR_GRAY2BGR) for box in boxes_sep]

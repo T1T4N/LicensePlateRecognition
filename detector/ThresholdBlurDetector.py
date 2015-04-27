@@ -5,9 +5,9 @@ from utils import loader, display, image
 
 
 class ThresholdBlurDetector(AbstractDetector):
-
-    def __init__(self, image):
+    def __init__(self, image, label=""):
         self.image = loader.load_image(image)
+        self.label = label
 
     def _check_size(self, candidate, area=-1):
         """
@@ -75,20 +75,20 @@ class ThresholdBlurDetector(AbstractDetector):
         # processing_img = cv2.GaussianBlur(processing_img, (7, 7), 3)
 
         if __debug__:
-            display.show_image(processing_img, 'Grey')
+            display.show_image(processing_img, self.label, 'Grey')
 
         processing_img = cv2.adaptiveThreshold(processing_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                cv2.THRESH_BINARY_INV, 11, 2)
 
         if __debug__:
-            display.show_image(processing_img, 'Threshold')
+            display.show_image(processing_img, self.label, 'Threshold')
 
         # Find the contours in the image. MODIFIES source image
         processing_copy = processing_img.copy()
         contours, hierarchy = cv2.findContours(processing_copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 
         if __debug__:
-            display.draw_contours(self.image, contours)
+            display.draw_contours(self.image, contours, self.label)
 
         rectangles = []
 

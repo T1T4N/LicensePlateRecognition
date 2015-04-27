@@ -10,12 +10,13 @@ class MorphologyTransformDetector(AbstractDetector):
     Detector that uses morphological image transformations to try and detect license plates
     """
 
-    def __init__(self, image):
+    def __init__(self, image, label=""):
         """
         Initialize detector with the given image
         :param image: String or cv2::Mat object from from which to initialize detector
         """
         self.image = loader.load_image(image)
+        self.label = label
 
     def _check_size(self, candidate, area=-1):
         """
@@ -79,12 +80,12 @@ class MorphologyTransformDetector(AbstractDetector):
         # grey_img = cv2.blur(grey_img, (5, 5))
 
         if __debug__:
-            display.show_image(processing_img, 'Grey')
+            display.show_image(processing_img, self.label, 'Grey')
 
         # Apply Sobel filter on the image
         processing_img = cv2.Sobel(processing_img, cv2.CV_8U, 1, 0, ksize=3, scale=1, delta=0)
         if __debug__:
-            display.show_image(processing_img, 'Sobel')
+            display.show_image(processing_img, self.label, 'Sobel')
 
         # TODO: Try to enlarge white area
         # sobel_img = cv2.morphologyEx(sobel_img, cv2.MORPH_TOPHAT, kernel3)
@@ -93,7 +94,7 @@ class MorphologyTransformDetector(AbstractDetector):
         # Apply Otsu's Binary Thresholding
         ret, processing_img = cv2.threshold(processing_img, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
         if __debug__:
-            display.show_image(processing_img, 'Otsu Threshold')
+            display.show_image(processing_img, self.label, 'Otsu Threshold')
 
         # TODO: Variable kernel size depending on image size and/or perspective
         k_size = (29, 3)
@@ -102,12 +103,12 @@ class MorphologyTransformDetector(AbstractDetector):
         # Apply the Close morphology Transformation
         processing_img = cv2.morphologyEx(processing_img, cv2.MORPH_CLOSE, element)
         if __debug__:
-            display.show_image(processing_img, 'Closed Morphology')
+            display.show_image(processing_img, self.label, 'Closed Morphology')
 
         # Find the contours in the image
         contours, hierarchy = cv2.findContours(processing_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         if __debug__:
-            display.draw_contours(self.image, contours)
+            display.draw_contours(self.image, contours, self.label)
 
         rectangles = []
         for itc in contours:
