@@ -24,7 +24,7 @@ def deskew_lines(plate):
         for i in range(len(lines[0])):
             line = lines[0, i]
             x1, y1, x2, y2 = line[0], line[1], line[2], line[3]
-            cv2.line(disp_img, (x1, y1), (x2, y2), color=(255, 0, 0), thickness=1)
+            cv2.line(disp_img, (x1, y1), (x2, y2), color=(0, 255, 0), thickness=1)
             line_angle = math.atan2(y2 - y1, x2 - x1)
             angle_rad += line_angle
             # print "Line angle: %.3f" % line_angle
@@ -74,7 +74,7 @@ def deskew_text(plate):
             if 0.5 < box_ratio < 2.5 and img_area / box_area < 45:
                 print "Passed\n"
 
-                cv2.drawContours(disp_img, [box], 0, (0, 0, 255), 1)
+                cv2.drawContours(disp_img, [box], 0, (0, 255, 0), 1)
                 boxes.append(box_points)
                 for (x, y) in box_points:
                     points.add((x, y))

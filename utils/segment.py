@@ -41,7 +41,7 @@ def segment_contours(plate):
             print "Area ratio: %.3f" % (img_area / box_area)
 
             # TODO: Square in the middle always caught, adjust box_ratio upper limit
-            if 0.5 < box_ratio < 3.5 and img_area / box_area < 45:
+            if box_height / float(box_width) < 5 and img_area / box_area < 45:
                 print "Passed\n"
 
                 # TODO: Fill contour without the holes
