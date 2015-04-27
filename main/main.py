@@ -16,8 +16,10 @@ def main():
 
     print('OpenCV version: %s' % cv2.__version__)
 
-    image_names = get_images_from_dir('images')
-    # image_names = ['images' + os.sep + '19.jpg']
+    # image_names = get_images_from_dir('images')
+    image_names = ['images' + os.sep + '14.jpg']
+    # image_names = ['images' + os.sep + '16.jpg']
+
     # image_names = ['images' + os.sep + '27.jpg']
     # image_names = ['images' + os.sep + '05.jpg']
     # image_names = ['images' + os.sep + '11.jpg']
@@ -25,7 +27,7 @@ def main():
 
     images = load_images(image_names)
     for i, src in enumerate(images):
-        detector = ThresholdBlurDetector(src)
+        detector = ThresholdBlurDetector(src, image_names[i])
         # detector = MorphologyTransformDetector(src)
 
         # plates[i] = (plate, rectangle_in_original_picture)

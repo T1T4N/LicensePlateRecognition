@@ -51,6 +51,7 @@ def deskew_text(plate):
     points = set([])
     boxes = []
     print "Deskewing text"
+    point_to_rect = {}
 
     contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     for ct in contours:
@@ -78,6 +79,8 @@ def deskew_text(plate):
                 boxes.append(box_points)
                 for (x, y) in box_points:
                     points.add((x, y))
+                    point_to_rect[(x, y)] = (mr, ct)
+
 
     points_sorted = sorted(points, key=lambda item: (item[0], item[1]))
     if len(points_sorted) > 0:
@@ -85,15 +88,35 @@ def deskew_text(plate):
 
         border_margin = 3  # Adding a border margin to have a space of few pixels away from the edge
         top_left = points_sorted[0] if points_sorted[0][1] > points_sorted[1][1] else points_sorted[1]
+        min_rect, contour = point_to_rect[top_left]
+        if min_rect[2] != 0.0:  # Minimum area rectangle is rotated
+            x, y, box_width, box_height = cv2.boundingRect(contour)
+            top_left = (x, y + box_height)
+            cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (255, 255, 0), 1)
         top_left = (top_left[0] - border_margin, top_left[1] + border_margin)
 
         bottom_left = points_sorted[0] if points_sorted[0][1] < points_sorted[1][1] else points_sorted[1]
+        min_rect, contour = point_to_rect[bottom_left]
+        if min_rect[2] != 0.0:  # Minimum area rectangle is rotated
+            x, y, box_width, box_height = cv2.boundingRect(contour)
+            bottom_left = (x, y)
+            cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (255, 255, 0), 1)
         bottom_left = (bottom_left[0] - border_margin, bottom_left[1] - border_margin)
 
         top_right = points_rev[0] if points_rev[0][1] > points_rev[1][1] else points_rev[1]
+        min_rect, contour = point_to_rect[top_right]
+        if min_rect[2] != 0.0:  # Minimum area rectangle is rotated
+            x, y, box_width, box_height = cv2.boundingRect(contour)
+            top_right = (x + box_width, y + box_height)
+            cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (255, 255, 0), 1)
         top_right = (top_right[0] + border_margin, top_right[1] + border_margin)
 
         bottom_right = points_rev[0] if points_rev[0][1] < points_rev[1][1] else points_rev[1]
+        min_rect, contour = point_to_rect[bottom_right]
+        if min_rect[2] != 0.0:  # Minimum area rectangle is rotated
+            x, y, box_width, box_height = cv2.boundingRect(contour)
+            bottom_right = (x + box_width, y)
+            cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (255, 255, 0), 1)
         bottom_right = (bottom_right[0] + border_margin, bottom_right[1] - border_margin)
 
         corners = np.array([top_left, top_right, bottom_left, bottom_right], np.float32)
