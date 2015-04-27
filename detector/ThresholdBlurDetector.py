@@ -1,10 +1,8 @@
-import math
-
 import cv2
 import numpy as np
 
 from detector import AbstractDetector
-from utils import loader, display, image
+from utils import loader, display, image, transform
 from recognizer import TextRecognizer
 
 
@@ -76,7 +74,7 @@ class ThresholdBlurDetector(AbstractDetector):
 
         # So dvoen blur se dobivat podobri rezultati, vekje istaknatite rabovi uste povekje se zadebeluvaat
         # processing_img = cv2.adaptiveBilateralFilter(processing_img, (3, 3), 100)
-        # processing_img = cv2.GaussianBlur(processing_img, (3,3), 3)
+        # processing_img = cv2.GaussianBlur(processing_img, (7, 7), 3)
 
         if __debug__:
             display.show_image(processing_img, 'Grey')
@@ -115,111 +113,10 @@ class ThresholdBlurDetector(AbstractDetector):
         # TODO: do not include some parts based on different parameters
         for processing_plate in processing_plates:
             # Skew correction using lines detection
-            # deskew_line = self._deskew_lines(processing_plate)
-            deskew_text = self._deskew_text(processing_plate)
+            # deskew_line = transform.deskew_lines(processing_plate)
+            deskew_text = transform.deskew_text(processing_plate)
             self._segment_contours(deskew_text)
         return rectangles
-
-    def _deskew_lines(self, plate):
-        angle_rad = 0.0
-        img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
-
-        # hq2x algorithm
-        img2x = image.hq2x_zoom(img)
-
-        display.show_image(img, resize=True)
-        display.show_image(img2x, resize=True)
-
-        img = cv2.cvtColor(img2x, cv2.COLOR_BGR2GRAY)
-        disp_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-        height, width = img.shape
-
-        lines = cv2.HoughLinesP(img, 1, np.pi / 180, 100, minLineLength=3 * width / 4, maxLineGap=20)
-        if lines is not None and len(lines) > 0:
-            for i in range(len(lines[0])):
-                line = lines[0, i]
-                x1, y1, x2, y2 = line[0], line[1], line[2], line[3]
-                cv2.line(disp_img, (x1, y1), (x2, y2), color=(255, 0, 0), thickness=1)
-                line_angle = math.atan2(y2 - y1, x2 - x1)
-                angle_rad += line_angle
-                # print "Line angle: %.3f" % line_angle
-
-            angle_rad /= len(lines[0])
-            # print "Avg angle rad: %.3f" % angle_rad
-            angle = math.degrees(angle_rad)
-            print "Avg angle deg: %.3f\n" % angle
-
-            display.show_image(disp_img, resize=True)
-            rotation_mat = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
-            disp_img = cv2.warpAffine(disp_img, rotation_mat, (width, height))
-            display.show_image(disp_img, resize=True)
-            img = cv2.warpAffine(img, rotation_mat, (width, height))
-
-        return img
-
-    def _deskew_text(self, plate):
-        img = plate.copy()
-        disp_img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
-        img_height, img_width = img.shape
-        img_area = img_height * img_width
-        boxes = set([])
-
-        contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        for ct in contours:
-            mr = cv2.minAreaRect(ct)  # Minimum enclosing rectangle
-            box = cv2.cv.BoxPoints(mr)
-            box = np.int0(box)
-            box_points = [(box[i, 0], box[i, 1]) for i in range(len(box))]
-            box_width, box_height = image.calculate_size(box_points)
-            if box_width > 0 and box_height > 0:
-                box_area = box_width * box_height
-                box_ratio = box_width / box_height
-                if box_ratio < 1:
-                    box_ratio = 1 / box_ratio
-
-                # TODO: Adjust img/box area ratio
-                if 0.5 < box_ratio < 2.5 and img_area / box_area < 45:
-                    # print "Box width: %.3f, height: %.3f" % (box_width, box_height)
-                    # print "Box area: %.3f" % box_area
-                    # print "Box ratio: %.3f" % box_ratio
-                    # print img_area/box_area
-                    cv2.drawContours(disp_img, [box], 0, (0, 0, 255), 1)
-                    for (x, y) in box_points:
-                        boxes.add((x, y))
-
-        x_boxes = sorted(boxes, key=lambda item: (item[0], item[1]))
-        if len(x_boxes) > 0:
-            x_boxes_rev = x_boxes[::-1]
-
-            border_margin = 3  # Adding a border margin to have a space of few pixels away from the edge
-            top_left = x_boxes[0] if x_boxes[0][1] > x_boxes[1][1] else x_boxes[1]
-            top_left = (top_left[0] - border_margin, top_left[1] + border_margin)
-
-            bottom_left = x_boxes[0] if x_boxes[0][1] < x_boxes[1][1] else x_boxes[1]
-            bottom_left = (bottom_left[0] - border_margin, bottom_left[1] - border_margin)
-
-            top_right = x_boxes_rev[0] if x_boxes_rev[0][1] > x_boxes_rev[1][1] else x_boxes_rev[1]
-            top_right = (top_right[0] + border_margin, top_right[1] + border_margin)
-
-            bottom_right = x_boxes_rev[0] if x_boxes_rev[0][1] < x_boxes_rev[1][1] else x_boxes_rev[1]
-            bottom_right = (bottom_right[0] + border_margin, bottom_right[1] - border_margin)
-
-            corners = np.array([top_left, top_right, bottom_left, bottom_right], np.float32)
-            dest_points = np.array([(0, img_height), (img_width, img_height), (0, 0), (img_width, 0)], np.float32)
-            transmtx = cv2.getPerspectiveTransform(corners, dest_points)
-            disp_wrapped = cv2.warpPerspective(img, transmtx, (img_width, img_height))
-
-            cv2.circle(disp_img, top_left, 1, (255, 0, 0), thickness=2)
-            cv2.circle(disp_img, bottom_left, 1, (255, 0, 0), thickness=2)
-            cv2.circle(disp_img, top_right, 1, (255, 0, 0), thickness=2)
-            cv2.circle(disp_img, bottom_right, 1, (255, 0, 0), thickness=2)
-            display.show_image(disp_img)
-            display.show_image(disp_wrapped)
-            # display.show_image(image.hq2x_zoom(disp_wrapped))
-
-            # TODO: Return points of found boxes relative to wrapped picture
-            return disp_wrapped
-        return img
 
     def _segment_contours(self, plate):
         img = plate.copy()
@@ -228,16 +125,20 @@ class ThresholdBlurDetector(AbstractDetector):
         img_height, img_width = img.shape
         img_area = img_height * img_width
 
-        print "\n\nPart area: %.3f" % img_area
+        print "\n\nSegmenting contours\nPart area: %.3f" % img_area
 
         boxes = []
-        contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # RETR_CCOMP returns a two level hierarchy of the contours: parent and children
+        contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
         for i, ct in enumerate(contours):
             # mr = cv2.minAreaRect(ct)
             # box = cv2.cv.BoxPoints(mr)
             # box = np.int0(box)
             # box_points = [(box[i, 0], box[i, 1]) for i in range(len(box))]
             # box_width, box_height = image.calculate_size(box_points)
+
+            if hierarchy[0][i][3] != -1:
+                continue
 
             # TODO: Number one has ratio ~ 4.5: very thin and high
             x, y, box_width, box_height = cv2.boundingRect(ct)
@@ -255,10 +156,10 @@ class ThresholdBlurDetector(AbstractDetector):
 
                 # TODO: Square in the middle always caught, adjust box_ratio upper limit
                 if 0.5 < box_ratio < 3 and img_area / box_area < 45:
-                    print "Passed"
-                    print
+                    print "Passed\n"
+
                     # TODO: Fill contour without the holes
-                    # cv2.drawContours(disp_img, [ct], 0, (255, 255, 255), thickness=-1)
+                    cv2.drawContours(img, [ct], 0, (255, 255, 255), thickness=-1)
 
                     # cv2.drawContours(disp_img, [box], 0, (0, 0, 255), 1)
                     cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (0, 255, 0), 1)
@@ -268,6 +169,21 @@ class ThresholdBlurDetector(AbstractDetector):
                     )
                     # box_points = sorted(box_points, key=lambda item: (item[0], item[1]))
                     boxes.append(np.array(box_points))
+
+        # Fill holes of contours in black
+        for i, ct in enumerate(contours):
+            if hierarchy[0][i][3] != -1:
+                parent_idx = hierarchy[0][i][3]
+                parent_contour = contours[parent_idx]
+                parent_area = cv2.contourArea(parent_contour)
+                child_area = cv2.contourArea(ct)
+                if child_area > float(parent_area) / 9:
+                    # Approximate using a polygon
+                    peri = cv2.arcLength(ct, True)
+                    approx = cv2.approxPolyDP(ct, 0.020 * peri, True)
+                    if cv2.isContourConvex(approx):
+                        cv2.drawContours(img, [approx], 0, (0, 0, 0), thickness=-1)
+                        # pass
 
         boxes_sorted = sorted(boxes, key=lambda item: (item[0][0], item[0][1]))
         boxes_sep = display.get_parts_of_image(img, boxes_sorted)

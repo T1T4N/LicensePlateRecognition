@@ -2,7 +2,7 @@ import cv2
 import os
 
 from detector import ThresholdBlurDetector
-from utils.loader import load_images
+from utils.loader import load_images, get_images_from_dir
 from utils.display import get_parts_of_image, display_rectangles
 from recognizer import TextRecognizer
 
@@ -19,10 +19,10 @@ def main():
     # image_names = ['images' + os.sep + '27.jpg']
     # image_names = ['images' + os.sep + '05.jpg']
     # image_names = ['images' + os.sep + '11.jpg']
-    image_names = ['images' + os.sep + '01.jpg']
+    image_names = ['images' + os.sep + '10.jpg']
 
     images = load_images(image_names)
-    for src in images:
+    for i, src in enumerate(images):
         detector = ThresholdBlurDetector(src)
         # detector = MorphologyTransformDetector(src)
         rectangles = detector.find_rectangles()
