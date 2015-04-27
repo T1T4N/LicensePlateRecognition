@@ -41,7 +41,7 @@ def segment_contours(plate):
             print "Area ratio: %.3f" % (img_area / box_area)
 
             # TODO: Square in the middle always caught, adjust box_ratio upper limit
-            if 0.5 < box_ratio < 3 and img_area / box_area < 45:
+            if 0.5 < box_ratio < 3.5 and img_area / box_area < 45:
                 print "Passed\n"
 
                 # TODO: Fill contour without the holes
@@ -55,6 +55,9 @@ def segment_contours(plate):
                 )
                 # box_points = sorted(box_points, key=lambda item: (item[0], item[1]))
                 boxes.append(np.array(box_points))
+            else:
+                cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (0, 0, 255), 1)
+                # display.show_image(disp_img)
 
     # Fill holes of contours in black
     for i, ct in enumerate(contours):

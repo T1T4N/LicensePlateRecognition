@@ -16,12 +16,12 @@ def main():
 
     print('OpenCV version: %s' % cv2.__version__)
 
-    # image_names = get_images_from_dir('images')
+    image_names = get_images_from_dir('images')
     # image_names = ['images' + os.sep + '19.jpg']
     # image_names = ['images' + os.sep + '27.jpg']
     # image_names = ['images' + os.sep + '05.jpg']
     # image_names = ['images' + os.sep + '11.jpg']
-    image_names = ['images' + os.sep + '10.jpg']
+    # image_names = ['images' + os.sep + '01.jpg']
 
     images = load_images(image_names)
     for i, src in enumerate(images):

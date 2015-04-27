@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 from detector import AbstractDetector
-from utils import loader, display
+from utils import loader, display, image
 
 
 class MorphologyTransformDetector(AbstractDetector):
@@ -21,36 +21,48 @@ class MorphologyTransformDetector(AbstractDetector):
         """
         Check size with respect to aspect ratio of a standard license plate
 
-        :param candidate: Rectangle on which to perform the check
+        :param candidate: ApproxPolyDP on which to perform the check
         :return: True if conditions satisfied, otherwise False
         """
 
-        error = 0.4
+        # TODO: Adjust error rate
+        error_min = 0.17
+        error_max = 0.32
         # Macedonian car plate size: 52x11c cm, aspect ratio = 4,72727272727
-        aspect = 4.72727272727
+        aspect = float(52) / float(11)
 
         # Set a min and max area
-        min_area = 15 * aspect * 15
-        max_area = 125 * aspect * 125
+        # TODO: Adjust coefficients for min and max area
+        min_area = 17 * aspect * 17
+        max_area = 112 * aspect * 112
 
         # Set aspect ratios with account to error.
-        ratio_min = aspect - aspect * error
-        ratio_max = aspect + aspect * error
+        min_ratio = aspect - aspect * error_min
+        max_ratio = aspect + aspect * error_max
 
-        candidate_area = candidate[0][0] * candidate[0][1]
-        candidate_ratio = float(candidate[0][0]) / float(candidate[0][1])
+        x_coordinates = [x for x in candidate[:, 0, 0]]
+        y_coordinates = [y for y in candidate[:, 0, 1]]
+        coordinates = [(x_coordinates[i], y_coordinates[i]) for i in range(len(x_coordinates))]
+
+        candidate_width, candidate_height = image.calculate_size(coordinates)
+
+        candidate_area = candidate_height * candidate_width
+        candidate_ratio = float(candidate_width) / float(candidate_height)
         if candidate_ratio < 1:
             candidate_ratio = 1 / candidate_ratio
 
-        # TODO: Filter too big or too small rectangles or with incorrect ratio
-        '''
-        if (candidate_area < min_area or candidate_area > max_area)
-            or (candidate_ratio < ratio_min or candidate_ratio > ratio_max):
+        if (candidate_area < min_area or candidate_area > max_area) \
+                or (candidate_ratio < min_ratio or candidate_ratio > max_ratio):
+            # print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
+            # print "Candidate area: %f" % candidate_area
+            # print "Candidate ratio: %f\n" % candidate_ratio
             return False
         else:
+            print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
+            print "Candidate area: %f" % candidate_area
+            print "Candidate ratio: %f" % candidate_ratio
+            print "Passed\n"
             return True
-        '''
-        return True
 
     def find_rectangles(self):
         # self.kernel9 = np.ones((7, 7), np.uint8)
@@ -59,41 +71,41 @@ class MorphologyTransformDetector(AbstractDetector):
         # self.kernel3 = np.ones((7, 7), np.uint8)
 
         # create a greyscale version of the image
-        grey_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        processing_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         # Blur the image
-        grey_img = cv2.adaptiveBilateralFilter(grey_img, (11, 11), 100)
+        processing_img = cv2.adaptiveBilateralFilter(processing_img, (11, 11), 100)
         # grey_img = cv2.bilateralFilter(grey_img, 5, 100, 100)
         # grey_img = cv2.blur(grey_img, (5, 5))
 
         if __debug__:
-            display.show_image(grey_img, 'Grey')
+            display.show_image(processing_img, 'Grey')
 
         # Apply Sobel filter on the image
-        sobel_img = cv2.Sobel(grey_img, cv2.CV_8U, 1, 0, ksize=3, scale=1, delta=0)
+        processing_img = cv2.Sobel(processing_img, cv2.CV_8U, 1, 0, ksize=3, scale=1, delta=0)
         if __debug__:
-            display.show_image(sobel_img, 'Sobel')
+            display.show_image(processing_img, 'Sobel')
 
         # TODO: Try to enlarge white area
         # sobel_img = cv2.morphologyEx(sobel_img, cv2.MORPH_TOPHAT, kernel3)
         # show_image(sobel_img)
 
         # Apply Otsu's Binary Thresholding
-        ret, thresholded_img = cv2.threshold(sobel_img, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
+        ret, processing_img = cv2.threshold(processing_img, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
         if __debug__:
-            display.show_image(thresholded_img, 'Otsu Threshold')
+            display.show_image(processing_img, 'Otsu Threshold')
 
         # TODO: Variable kernel size depending on image size and/or perspective
         k_size = (29, 3)
         element = cv2.getStructuringElement(cv2.MORPH_RECT, k_size)
 
         # Apply the Close morphology Transformation
-        closed_otsu_thresholded = cv2.morphologyEx(thresholded_img, cv2.MORPH_CLOSE, element)
+        processing_img = cv2.morphologyEx(processing_img, cv2.MORPH_CLOSE, element)
         if __debug__:
-            display.show_image(closed_otsu_thresholded, 'Closed Morphology')
+            display.show_image(processing_img, 'Closed Morphology')
 
         # Find the contours in the image
-        contours, hierarchy = cv2.findContours(closed_otsu_thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(processing_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         if __debug__:
             display.draw_contours(self.image, contours)
 
@@ -104,4 +116,17 @@ class MorphologyTransformDetector(AbstractDetector):
             if self._check_size(mr):
                 box = cv2.cv.BoxPoints(mr)
                 rectangles.append(np.int0(box))  # Rotated minimum enclosing rectangle
-        return rectangles
+
+        processing_plates = display.get_parts_of_image(processing_img, rectangles)
+        ret = []
+
+        for i, processing_plate in enumerate(processing_plates):
+            img_height, img_width = processing_plate.shape
+            img_area = img_height * img_width
+            # TODO: do not include some parts based on different parameters
+            if img_area < 4500:
+                ret.append((cv2.cvtColor(image.hq2x_zoom(processing_plate), cv2.COLOR_BGR2GRAY), rectangles[i]))
+            else:
+                ret.append((processing_plate, rectangles[i]))
+
+        return ret
