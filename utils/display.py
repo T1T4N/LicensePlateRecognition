@@ -79,6 +79,7 @@ def get_parts_of_image(img, rectangles, points_sorted=False):
 
     ret = []
     if not points_sorted:
+        # TODO: sort points by x axis
         pass
 
     for rect in rectangles:

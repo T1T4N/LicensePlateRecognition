@@ -1,7 +1,7 @@
 import cv2
 
 from detector import AbstractDetector
-from utils import loader, display, image, transform, segment
+from utils import loader, display, image
 
 
 class ThresholdBlurDetector(AbstractDetector):
@@ -90,8 +90,6 @@ class ThresholdBlurDetector(AbstractDetector):
         if __debug__:
             display.draw_contours(self.image, contours)
 
-        biggest = None
-        max_area = 0
         rectangles = []
 
         for i in contours:
@@ -103,16 +101,17 @@ class ThresholdBlurDetector(AbstractDetector):
                 if len(approx) == 4 and cv2.isContourConvex(approx):
                     if self._check_size(approx):
                         rectangles.append(approx)
-                        if area > max_area:
-                            biggest = approx
-                            max_area = area
 
         processing_plates = display.get_parts_of_image(processing_img, rectangles)
-        # TODO: do not include some parts based on different parameters
-        for processing_plate in processing_plates:
-            # Skew correction using lines detection
-            # deskew_line = transform.deskew_lines(processing_plate)
-            deskew_text = transform.deskew_text(processing_plate)
-            segment.segment_contours(deskew_text)
+        ret = []
 
-        return rectangles
+        for i, processing_plate in enumerate(processing_plates):
+            img_height, img_width = processing_plate.shape
+            img_area = img_height * img_width
+            # TODO: do not include some parts based on different parameters
+            if img_area < 4500:
+                ret.append((cv2.cvtColor(image.hq2x_zoom(processing_plate), cv2.COLOR_BGR2GRAY), rectangles[i]))
+            else:
+                ret.append((processing_plate, rectangles[i]))
+
+        return ret

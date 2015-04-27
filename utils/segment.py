@@ -75,19 +75,4 @@ def segment_contours(plate):
     boxes_sep = display.get_parts_of_image(img, boxes_sorted)
     display.show_image(disp_img)
 
-    labels = []
-    for box in boxes_sep:
-        # box_mod = image.hq2x_zoom(cv2.cvtColor(box, cv2.COLOR_GRAY2BGR))
-        box_mod = cv2.cvtColor(box, cv2.COLOR_GRAY2BGR)
-        tr = TextRecognizer(cv2.bitwise_not(box_mod))
-        text, conf = tr.find_text()
-        text = text.strip()
-        t2 = ""
-        for i in range(len(text)):
-            if ord(text[i]) in range(128):
-                t2 += text[i]
-        labels.append(t2)
-        print t2, conf
-        # display.show_image(box_mod)
-
-    display.multi_plot(boxes_sep, labels, 1, len(boxes_sep))
+    return [cv2.cvtColor(box, cv2.COLOR_GRAY2BGR) for box in boxes_sep]
