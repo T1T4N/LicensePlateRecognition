@@ -5,18 +5,18 @@ from utils import display, image
 
 
 def deskew_lines(plate):
+    """
+    Removes image skew by finding lines in the image and calculating an average angle of the lines
+    :param plate: numpy.array representing a grey image of the license plate
+    :return: numpy.array representing a grey image of the deskewed license plate
+    """
     angle_rad = 0.0
-    img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
 
-    # hq2x algorithm
-    # img2x = image.hq2x_zoom(img)
-
-    display.show_image(img, resize=True)
-    # display.show_image(img2x, resize=True)
-
-    img = plate.copy()  # cv2.cvtColor(img2x, cv2.COLOR_BGR2GRAY)
+    img = plate.copy()
     disp_img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
     height, width = img.shape
+    if __debug__:
+        display.show_image(disp_img, resize=True)
 
     lines = cv2.HoughLinesP(img, 1, np.pi / 180, 100, minLineLength=3 * width / 4, maxLineGap=20)
     if lines is not None and len(lines) > 0:
@@ -33,23 +33,31 @@ def deskew_lines(plate):
         angle = math.degrees(angle_rad)
         print "Avg angle deg: %.3f\n" % angle
 
-        display.show_image(disp_img, resize=True)
+        if __debug__:
+            display.show_image(disp_img, resize=True)
         rotation_mat = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
         disp_img = cv2.warpAffine(disp_img, rotation_mat, (width, height))
-        display.show_image(disp_img, resize=True)
-        img = cv2.warpAffine(img, rotation_mat, (width, height))
 
+        if __debug__:
+            display.show_image(disp_img, resize=True)
+        img = cv2.warpAffine(img, rotation_mat, (width, height))
     return img
 
 
 def deskew_text(plate):
+    """
+    Removes image skew by finding contours meeting the criteria and creating a bounding rectangle around them
+    :type plate: numpy.ndarray representing a grey image of the license plate
+    :return: numpy.array representing a grey image of the deskewed license plate
+    """
+    print "Deskewing text"
+
     img = plate.copy()
     disp_img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
     img_height, img_width = img.shape
     img_area = img_height * img_width
     points = set([])
     boxes = []
-    print "Deskewing text"
     point_to_rect = {}
 
     contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -94,6 +102,7 @@ def deskew_text(plate):
         bottom_left = points_sorted[0] if points_sorted[0][1] > points_sorted[1][1] else points_sorted[1]
         bottom_right = points_rev[0] if points_rev[0][1] > points_rev[1][1] else points_rev[1]
 
+        # Calculate the opposite point
         leftmost = [point for point in points_sorted[:4] if point != bottom_left]
         rightmost = [point for point in points_rev[:4] if point != bottom_right]
         dl = {}
@@ -110,6 +119,7 @@ def deskew_text(plate):
             dist_right.append(dst)
         dist_left = sorted(dist_left)
         dist_right = sorted(dist_right)
+
         top_left = dl[dist_left[0]]
         top_right = dr[dist_right[0]]
 
@@ -137,11 +147,13 @@ def deskew_text(plate):
                 top_left = (x, y)
                 cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (255, 255, 0), 1)
 
+        # Add border margin to each coordinate
         bottom_left = (bottom_left[0] - border_margin, bottom_left[1] + border_margin)
         top_left = (top_left[0] - border_margin, top_left[1] - border_margin)
         bottom_right = (bottom_right[0] + border_margin, bottom_right[1] + border_margin)
         top_right = (top_right[0] + border_margin, top_right[1] - border_margin)
 
+        # Apply perspective transformation
         corners = np.array([bottom_left, bottom_right, top_left, top_right], np.float32)
         dest_points = np.array([(0, img_height), (img_width, img_height), (0, 0), (img_width, 0)], np.float32)
         trans_matrix = cv2.getPerspectiveTransform(corners, dest_points)

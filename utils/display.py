@@ -125,10 +125,10 @@ def get_white_pixels(img, rectangles):
 
 def color_filter(img):
     """
-    Filtering image by color, eliminting non-white, non-black and non-gray pixels
+    Filtering image by color, eliminating non-white, non-black and non-gray pixels
 
     :param img: image to be processed
-    :return: processed image in grayscale format
+    :return: processed image in greyscale format
     """
     res = img.copy()
     width, height, channel = img.shape

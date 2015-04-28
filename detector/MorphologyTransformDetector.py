@@ -48,6 +48,9 @@ class MorphologyTransformDetector(AbstractDetector):
         candidate_width, candidate_height = image.calculate_size(coordinates)
 
         candidate_area = candidate_height * candidate_width
+        if candidate_height == 0.0 or candidate_width == 0.0:
+            return False
+
         candidate_ratio = float(candidate_width) / float(candidate_height)
         if candidate_ratio < 1:
             candidate_ratio = 1 / candidate_ratio
@@ -83,47 +86,65 @@ class MorphologyTransformDetector(AbstractDetector):
             display.show_image(processing_img, self.label, 'Grey')
 
         # Apply Sobel filter on the image
-        processing_img = cv2.Sobel(processing_img, cv2.CV_8U, 1, 0, ksize=3, scale=1, delta=0)
+        sobel_img = cv2.Sobel(processing_img, cv2.CV_8U, 1, 0, ksize=3, scale=1, delta=0)
         if __debug__:
-            display.show_image(processing_img, self.label, 'Sobel')
+            display.show_image(sobel_img, self.label, 'Sobel')
 
         # TODO: Try to enlarge white area
         # sobel_img = cv2.morphologyEx(sobel_img, cv2.MORPH_TOPHAT, kernel3)
         # show_image(sobel_img)
 
         # Apply Otsu's Binary Thresholding
-        ret, processing_img = cv2.threshold(processing_img, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
+        ret, sobel_img = cv2.threshold(sobel_img, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
         if __debug__:
-            display.show_image(processing_img, self.label, 'Otsu Threshold')
+            display.show_image(sobel_img, self.label, 'Otsu Threshold')
 
         # TODO: Variable kernel size depending on image size and/or perspective
         k_size = (29, 3)
         element = cv2.getStructuringElement(cv2.MORPH_RECT, k_size)
 
         # Apply the Close morphology Transformation
-        processing_img = cv2.morphologyEx(processing_img, cv2.MORPH_CLOSE, element)
+        sobel_img = cv2.morphologyEx(sobel_img, cv2.MORPH_CLOSE, element)
         if __debug__:
-            display.show_image(processing_img, self.label, 'Closed Morphology')
+            display.show_image(sobel_img, self.label, 'Closed Morphology')
 
         # Find the contours in the image
-        contours, hierarchy = cv2.findContours(processing_img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(sobel_img.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         if __debug__:
             display.draw_contours(self.image, contours, self.label)
+
+        # display.show_image(processing_img)
+        # display.show_image(sobel_img)
 
         rectangles = []
         for itc in contours:
             mr = cv2.minAreaRect(itc)  # Minimum enclosing rectangle
-            # itc = (top-left x, top-left y), (width, height), angle-of-rotation
-            if self._check_size(mr):
-                box = cv2.cv.BoxPoints(mr)
+            # mr = (top-left x, top-left y), (width, height), angle-of-rotation
+            box = cv2.cv.BoxPoints(mr)
+            box_points = np.array([[(box[i][0], box[i][1])] for i in range(len(box))])
+            if self._check_size(box_points):
                 rectangles.append(np.int0(box))  # Rotated minimum enclosing rectangle
 
         processing_plates = display.get_parts_of_image(processing_img, rectangles)
+        # white_pixels = display.get_white_pixels(self.image, rectangles)
         ret = []
 
         for i, processing_plate in enumerate(processing_plates):
-            img_height, img_width = processing_plate.shape
+            img = processing_plate
+            img_width, img_height = img.shape
             img_area = img_height * img_width
+
+            # filtering by color
+            # white_img = white_pixels[i]
+            # # display.show_image(white_img)
+            # processing_copy = img.copy()
+            # for ii in range(img_width):
+            # for jj in range(img_height):
+            #         if white_img[ii, jj] == 255:  # if white in the filter set it to black
+            #             processing_copy[ii, jj] = 0
+            # display.show_image(processing_copy, "processed_white")
+            # processing_plate = processing_copy.copy()
+
             # TODO: do not include some parts based on different parameters
             if img_area < 4500:
                 ret.append((cv2.cvtColor(image.hq2x_zoom(processing_plate), cv2.COLOR_BGR2GRAY), rectangles[i]))

@@ -5,6 +5,7 @@ from utils import loader, display, image
 
 
 class ThresholdBlurDetector(AbstractDetector):
+
     def __init__(self, image, label=""):
         self.image = loader.load_image(image)
         self.label = label
@@ -37,6 +38,8 @@ class ThresholdBlurDetector(AbstractDetector):
         coordinates = [(x_coordinates[i], y_coordinates[i]) for i in range(len(x_coordinates))]
 
         candidate_width, candidate_height = image.calculate_size(coordinates)
+        if candidate_height == 0.0 or candidate_width == 0.0:
+            return False
 
         candidate_area = candidate_height * candidate_width
         candidate_ratio = float(candidate_width) / float(candidate_height)
@@ -120,7 +123,7 @@ class ThresholdBlurDetector(AbstractDetector):
                 for jj in range(len(processing_plate[ii])):
                     if white_img[ii, jj] == 255:  # if white in the filter set it to black
                         processing_copy[ii, jj] = 0
-            display.show_image(processing_copy, "processed_white")
+            # display.show_image(processing_copy, "processed_white")
             # processing_plate = processing_copy.copy()
 
             # TODO: do not include some parts based on different parameters

@@ -4,6 +4,12 @@ import display
 
 
 def segment_contours(plate):
+    """
+    Finds the contours satisfying the required constraints
+    :type plate: A numpy.array representing a grey image of the license plate
+    :return: A list of numpy.array representing BGR images of the contours
+    """
+
     img = plate.copy()
     disp_img = cv2.cvtColor(plate, cv2.COLOR_GRAY2BGR)
     img_height, img_width = img.shape

@@ -1,7 +1,7 @@
 import cv2
 import os
 
-from detector import ThresholdBlurDetector
+from detector import ThresholdBlurDetector, MorphologyTransformDetector
 from utils.loader import load_images, get_images_from_dir
 from utils.display import get_parts_of_image, display_rectangles, show_image, multi_plot
 from utils.transform import deskew_lines, deskew_text
@@ -20,14 +20,14 @@ def main():
     # image_names = ['images' + os.sep + '16.jpg']
     # image_names = ['images' + os.sep + '25.jpg']
     # image_names = ['images' + os.sep + '27.jpg']
-    # image_names = ['images' + os.sep + '11.jpg']
+    # image_names = ['images' + os.sep + '29.jpg']
     # image_names = ['images' + os.sep + '11.jpg']
     # image_names = ['images' + os.sep + '05.jpg']
 
     images = load_images(image_names)
     for i, src in enumerate(images):
-        detector = ThresholdBlurDetector(src)
-        # detector = MorphologyTransformDetector(src)
+        detector = ThresholdBlurDetector(src, image_names[i])
+        # detector = MorphologyTransformDetector(src, image_names[i])
 
         # plates[i] = (plate, rectangle_in_original_picture)
         plates = detector.find_rectangles()
