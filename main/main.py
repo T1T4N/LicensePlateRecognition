@@ -18,8 +18,7 @@ def main():
 
     image_names = sorted(get_images_from_dir('images'))
     # image_names = ['images' + os.sep + '14.jpg']
-    # image_names = ['images' + os.sep + '16.jpg']
-
+    image_names = ['images' + os.sep + '25.jpg']
     # image_names = ['images' + os.sep + '27.jpg']
     # image_names = ['images' + os.sep + '11.jpg']
     # image_names = ['images' + os.sep + '11.jpg']

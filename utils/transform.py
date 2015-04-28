@@ -71,7 +71,9 @@ def deskew_text(plate):
             print "Image area / box_area: %.3f" % (img_area / box_area)
 
             # TODO: Adjust img/box area ratio
-            if 0.5 < box_ratio < 2.5 and img_area / box_area < 55:  # 45:
+            limit_area = 58
+            limit_ratio = 4.1
+            if 0.5 < box_ratio < limit_ratio and img_area / box_area < limit_area:
                 print "Passed\n"
 
                 cv2.drawContours(disp_img, [box], 0, (0, 255, 0), 1)
@@ -83,34 +85,50 @@ def deskew_text(plate):
                 cv2.drawContours(disp_img, [box], 0, (0, 0, 255), 1)
                 # display.show_image(disp_img)
 
-    points_sorted = sorted(points, key=lambda item: (item[0], item[1]))
+    points_sorted = sorted(points, key=lambda item: (item[0], -item[1]))
     if len(points_sorted) > 0:
         points_rev = points_sorted[::-1]
 
         border_margin = 3  # Adding a border margin to have a space of few pixels away from the edge
 
+        # TODO: Choose coordinates correctly
         top_left = points_sorted[0] if points_sorted[0][1] > points_sorted[1][1] else points_sorted[1]
-        bottom_left = points_sorted[0] if points_sorted[0][1] < points_sorted[1][1] else points_sorted[1]
         top_right = points_rev[0] if points_rev[0][1] > points_rev[1][1] else points_rev[1]
-        bottom_right = points_rev[0] if points_rev[0][1] < points_rev[1][1] else points_rev[1]
-
         min_rect, contour = point_to_rect[top_left]
         min_rect2, contour2 = point_to_rect[top_right]
         angle1, angle2 = min_rect[2], min_rect2[2]
+
+        d1 = math.hypot(top_left[0] - points_sorted[1][0], top_left[1] - points_sorted[1][1])
+        d2 = math.hypot(top_left[0] - points_sorted[2][0], top_left[1] - points_sorted[2][1])
+        if d1 != min_rect[2]:
+            bottom_left = points_sorted[1]
+        elif d2 != min_rect[2] and d2 == min_rect[3]:
+            bottom_left = points_sorted[2]
+        else:
+            print "ERROR bottom_right"
+
+        d1 = math.hypot(top_right[0] - points_rev[1][0], top_right[1] - points_rev[1][1])
+        d2 = math.hypot(top_right[0] - points_rev[2][0], top_right[1] - points_rev[2][1])
+        if d1 != min_rect2[2]:
+            bottom_right = points_rev[1]
+        elif d2 != min_rect2[2] and d2 == min_rect2[3]:
+            bottom_right = points_rev[2]
+        else:
+            print "ERROR bottom_right"
 
         # BUGFIX: When the first or last box contains J (for example) the minimum area bounding rectangle is rotated
         # Detect the differences between the rotation angles and use the non rotated bounding rectangle
         # for the box that has bigger angle
         if angle1 != 0.0 or angle2 != 0.0:
-            d1 = abs(angle1 - 0.0)
-            d2 = abs(angle2 - 0.0)
+            a1 = angle1 % 90
+            a2 = angle2 % 90
             diff = abs(abs(angle1) - abs(angle2))
-            if diff > 10 and d2 > d1:
+            if diff > 10 and a1 < a2:
                 x, y, box_width, box_height = cv2.boundingRect(contour2)
                 top_right = (x + box_width, y + box_height)
                 bottom_right = (x + box_width, y)
                 cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (255, 255, 0), 1)
-            elif diff > 10 and d1 > d2:
+            elif diff > 10 and a2 < a1:
                 x, y, box_width, box_height = cv2.boundingRect(contour)
                 top_left = (x, y + box_height)
                 bottom_left = (x, y)
