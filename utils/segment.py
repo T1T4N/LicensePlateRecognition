@@ -11,16 +11,27 @@ def segment_contours(plate):
 
     print "\n\nSegmenting contours\nPart area: %.3f" % img_area
 
+    contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    for i, ct in enumerate(contours):
+        x, y, box_width, box_height = cv2.boundingRect(ct)
+        if box_width > 0 and box_height > 0:
+            box_area = float(box_width) * float(box_height)
+            box_ratio = float(box_width) / float(box_height)
+            if box_ratio < 1:
+                box_ratio = 1 / float(box_ratio)
+            limit_ratio = 5.5
+            limit_area = 45.0
+            # Fill small noise points with black color
+            if not (box_ratio < limit_ratio
+                    and box_height / float(box_width) < limit_ratio and img_area / box_area < limit_area) \
+                    and float(img_area) / box_area > limit_area:
+                cv2.drawContours(img, [ct], 0, (0, 0, 0), thickness=-1)
+                cv2.drawContours(disp_img, [ct], 0, (0, 0, 0), thickness=-1)
+
     boxes = []
     # RETR_CCOMP returns a two level hierarchy of the contours: parent and children
     contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
     for i, ct in enumerate(contours):
-        # mr = cv2.minAreaRect(ct)
-        # box = cv2.cv.BoxPoints(mr)
-        # box = np.int0(box)
-        # box_points = [(box[i, 0], box[i, 1]) for i in range(len(box))]
-        # box_width, box_height = image.calculate_size(box_points)
-
         if hierarchy[0][i][3] != -1:
             continue
 
@@ -39,7 +50,10 @@ def segment_contours(plate):
             print "Area ratio: %.3f" % (img_area / box_area)
 
             # TODO: Square in the middle always caught, adjust box_ratio upper limit
-            if box_height / float(box_width) < 5 and img_area / box_area < 45:
+            limit_ratio = 5.5
+            limit_area = 45.0
+            if box_ratio < limit_ratio \
+                    and box_height / float(box_width) < limit_ratio and img_area / box_area < limit_area:
                 print "Passed\n"
 
                 # TODO: Fill contour without the holes
@@ -56,25 +70,24 @@ def segment_contours(plate):
             else:
                 cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (0, 0, 255), 1)
                 # Fill small noise points with black color
-                if img_area / box_area > 45:
+                if img_area / box_area > limit_area:
                     cv2.drawContours(img, [ct], 0, (0, 0, 0), thickness=-1)
                     cv2.drawContours(disp_img, [ct], 0, (0, 0, 0), thickness=-1)
                     # display.show_image(disp_img)
 
-    # Fill holes of contours in black
-    for i, ct in enumerate(contours):
-        if hierarchy[0][i][3] != -1:
-            parent_idx = hierarchy[0][i][3]
-            parent_contour = contours[parent_idx]
-            parent_area = cv2.contourArea(parent_contour)
-            child_area = cv2.contourArea(ct)
-            if child_area > float(parent_area) / 9:
-                # Approximate using a polygon
-                peri = cv2.arcLength(ct, True)
-                approx = cv2.approxPolyDP(ct, 0.020 * peri, True)
-                if cv2.isContourConvex(approx):
-                    # cv2.drawContours(img, [approx], 0, (0, 0, 0), thickness=-1)
-                    pass
+    # TODO: Fill holes of contours in black
+    # for i, ct in enumerate(contours):
+    # if hierarchy[0][i][3] != -1:
+    #         parent_idx = hierarchy[0][i][3]
+    #         parent_contour = contours[parent_idx]
+    #         parent_area = cv2.contourArea(parent_contour)
+    #         child_area = cv2.contourArea(ct)
+    #         if child_area > float(parent_area) / 9:
+    #             # Approximate using a polygon
+    #             peri = cv2.arcLength(ct, True)
+    #             approx = cv2.approxPolyDP(ct, 0.020 * peri, True)
+    #             if cv2.isContourConvex(approx):
+    #                 cv2.drawContours(img, [approx], 0, (0, 0, 0), thickness=-1)
 
     boxes_sorted = sorted(boxes, key=lambda item: (item[0][0], item[0][1]))
     boxes_sep = display.get_parts_of_image(img, boxes_sorted)
