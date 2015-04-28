@@ -26,7 +26,7 @@ def main():
 
     images = load_images(image_names)
     for i, src in enumerate(images):
-        detector = ThresholdBlurDetector(src, image_names[i])
+        detector = ThresholdBlurDetector(src)
         # detector = MorphologyTransformDetector(src)
 
         # plates[i] = (plate, rectangle_in_original_picture)

@@ -112,10 +112,25 @@ class ThresholdBlurDetector(AbstractDetector):
                             max_area = area
 
         processing_plates = display.get_parts_of_image(processing_img, rectangles)
+        #getting non-gray, non-white and non-black pixels
+        white_pixels = display.get_white_pixels(self.image, rectangles)
+        ind = 0;
+
         # TODO: do not include some parts based on different parameters
         for processing_plate in processing_plates:
             # Skew correction using lines detection
             # deskew_line = self._deskew_lines(processing_plate)
+
+            #filtering by color
+            white_img = white_pixels[ind]
+            ind += 1
+            for i in range(len(processing_plate)):
+                for j in range(len(processing_plate[i])):
+                    if white_img[i, j] == 255:
+                        processing_plate[i, j] = 0
+            display.show_image(processing_plate, "processing_plate")
+
+
             deskew_text = self._deskew_text(processing_plate)
             self._segment_contours(deskew_text)
         return rectangles
