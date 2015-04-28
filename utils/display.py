@@ -3,14 +3,16 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def show_image(image, title='image', resize=True):
+def show_image(image, image_label="", image_title='image', resize=True):
     """
     Show the cv2::Mat image in a window and waits for a key
 
     :param image: Image to be shown
-    :param title: Optional title for the window
+    :param image_label: Option image filename
+    :param image_title: Optional title for the window
     """
 
+    title = image_title + " " + image_label
     cv2.namedWindow(title, cv2.WINDOW_NORMAL)
     cv2.imshow(title, image)
     if resize:
@@ -55,7 +57,7 @@ def display_rectangles(image, rectangles):
     show_image(src2)
 
 
-def draw_contours(image, contours):
+def draw_contours(image, contours, image_label=""):
     """
     Plot specified contours on the specified image
     :param image: cv2::Mat image on which to plot
@@ -65,7 +67,7 @@ def draw_contours(image, contours):
     src = image.copy()
     color = (0, 255, 0)
     cv2.drawContours(src, contours, -1, color, 1)
-    show_image(src, 'Contours')
+    show_image(src, image_label, 'Contours')
 
 
 def get_parts_of_image(img, rectangles, points_sorted=False):
@@ -79,6 +81,7 @@ def get_parts_of_image(img, rectangles, points_sorted=False):
 
     ret = []
     if not points_sorted:
+        # TODO: sort points by x axis
         pass
 
     for rect in rectangles:

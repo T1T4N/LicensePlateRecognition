@@ -112,27 +112,10 @@ class ThresholdBlurDetector(AbstractDetector):
                             max_area = area
 
         processing_plates = display.get_parts_of_image(processing_img, rectangles)
-
-        #getting which pixels are not white, grey or black
-        white_pixels = display.get_white_pixels(self.image, rectangles)
-        ind = 0
-
         # TODO: do not include some parts based on different parameters
         for processing_plate in processing_plates:
             # Skew correction using lines detection
             # deskew_line = self._deskew_lines(processing_plate)
-
-            white = white_pixels[ind]
-            ind += 1
-
-            #make black every pixel that is not white, black or gray
-            for i in range(len(processing_plate)):
-                for j in range(len(processing_plate[i])):
-                    if white[i,j] == 255:
-                        processing_plate[i, j] = 0
-            cv2.imshow('processing_plate',processing_plate)
-            cv2.waitKey(0)
-
             deskew_text = self._deskew_text(processing_plate)
             self._segment_contours(deskew_text)
         return rectangles
@@ -306,26 +289,3 @@ class ThresholdBlurDetector(AbstractDetector):
             # display.show_image(box_mod)
 
         display.multi_plot(boxes_sep, labels, 1, len(boxes_sep))
-
-
-    def _color_filter(self, img):
-        res = img.copy()
-        cv2.imshow('color filter1',res)
-        cv2.waitKey(0)
-        mask = np.zeros((len(img), len(img[0])))
-
-        for i in range(len(img)):
-            for j in range(len(img[i])):
-                pixel = img[i,j]
-                print pixel
-                minn = min(pixel)
-                maxx = max(pixel)
-                if (maxx-minn) <= 40 and maxx < 160:
-                    mask[i, j] = 1
-                else:
-                    res[i, j] = 255
-
-        cv2.imshow('color filter',res)
-        # cv2.imwrite('res.jpg', res)
-        cv2.waitKey(0)
-        return res
