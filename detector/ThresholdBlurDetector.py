@@ -126,7 +126,7 @@ class ThresholdBlurDetector(AbstractDetector):
             ind += 1
             for i in range(len(processing_plate)):
                 for j in range(len(processing_plate[i])):
-                    if white_img[i, j] == 255:
+                    if white_img[i, j] == 255: #if white in the filter set it to black
                         processing_plate[i, j] = 0
             display.show_image(processing_plate, "processing_plate")
 
