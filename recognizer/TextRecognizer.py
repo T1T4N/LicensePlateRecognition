@@ -36,6 +36,7 @@ class TextRecognizer(object):
         #####################################################################################################
         api = tesseract.TessBaseAPI()
         api.Init(".", "eng", tesseract.OEM_DEFAULT)
+        api.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
         # -psm N
         # Set Tesseract to only run a subset of layout analysis and assume a certain form of image. The options for N are:
         #

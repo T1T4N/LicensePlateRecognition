@@ -102,6 +102,68 @@ def get_parts_of_image(img, rectangles, points_sorted=False):
     return ret
 
 
+
+def get_white_pixels(img, rectangles, points_sorted=False):
+    """
+    Crops the detected rectangles from the image and tries to find any text
+    used for finding which pixels are not of interest - not black, white or gray
+
+    :param img: Source image from which to crop
+    :param rectangles: List of rectangles representing crop areas
+    :return: List of images representing the cropped areas
+    """
+
+    ret = []
+    if not points_sorted:
+        pass
+
+    for rect in rectangles:
+        x_min = 999999
+        x_max = 0
+        y_min = 999999
+        y_max = 0
+        for point in rect:
+            if len(point.shape) == 1:
+                x_max = max(x_max, point[0])
+                y_max = max(y_max, point[1])
+                x_min = min(x_min, point[0])
+                y_min = min(y_min, point[1])
+            else:
+                x_max = max(x_max, point[0][0])
+                y_max = max(y_max, point[0][1])
+                x_min = min(x_min, point[0][0])
+                y_min = min(y_min, point[0][1])
+        image_part = img[y_min:y_max, x_min:x_max]
+        color_filtered = color_filter(image_part)
+        ret.append(color_filtered)
+    return ret
+
+def color_filter(img):
+    """
+    Filtering image by color, eliminting non-white, non-black and non-gray pixels
+
+    :param img: image to be processed
+    :return: processed image in grayscale format
+    """
+    res = img.copy()
+    mask = np.zeros((len(img), len(img[0])))
+
+    for i in range(len(img)):
+        for j in range(len(img[i])):
+            pixel = img[i,j]
+            minn = min(pixel)
+            maxx = max(pixel)
+            if (maxx-minn) <= 40 and maxx < 160:
+                mask[i, j] = 1
+            else:
+                res[i, j] = 255
+
+    res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
+    cv2.imshow('color filter',res)
+    cv2.waitKey(0)
+    return res
+
+
 def process_plate_image(img):
     """
     Final image processing of the license plate image crop
