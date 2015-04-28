@@ -73,7 +73,7 @@ def deskew_text(plate):
             # TODO: Adjust img/box area ratio
             limit_area = 58
             limit_ratio = 4.1
-            if 0.5 < box_ratio < limit_ratio and img_area / box_area < limit_area:
+            if 0.5 < box_ratio < limit_ratio and 4 < img_area / box_area < limit_area:
                 print "Passed\n"
 
                 cv2.drawContours(disp_img, [box], 0, (0, 255, 0), 1)
@@ -91,30 +91,31 @@ def deskew_text(plate):
 
         border_margin = 3  # Adding a border margin to have a space of few pixels away from the edge
 
-        # TODO: Choose coordinates correctly
-        top_left = points_sorted[0] if points_sorted[0][1] > points_sorted[1][1] else points_sorted[1]
-        top_right = points_rev[0] if points_rev[0][1] > points_rev[1][1] else points_rev[1]
-        min_rect, contour = point_to_rect[top_left]
-        min_rect2, contour2 = point_to_rect[top_right]
+        bottom_left = points_sorted[0] if points_sorted[0][1] > points_sorted[1][1] else points_sorted[1]
+        bottom_right = points_rev[0] if points_rev[0][1] > points_rev[1][1] else points_rev[1]
+
+        leftmost = [point for point in points_sorted[:4] if point != bottom_left]
+        rightmost = [point for point in points_rev[:4] if point != bottom_right]
+        dl = {}
+        dr = {}
+        dist_left = []
+        dist_right = []
+        for point in leftmost:
+            dst = abs(bottom_left[0] - point[0])
+            dl[dst] = point
+            dist_left.append(dst)
+        for point in rightmost:
+            dst = abs(bottom_right[0] - point[0])
+            dr[dst] = point
+            dist_right.append(dst)
+        dist_left = sorted(dist_left)
+        dist_right = sorted(dist_right)
+        top_left = dl[dist_left[0]]
+        top_right = dr[dist_right[0]]
+
+        min_rect, contour = point_to_rect[bottom_left]
+        min_rect2, contour2 = point_to_rect[bottom_right]
         angle1, angle2 = min_rect[2], min_rect2[2]
-
-        d1 = math.hypot(top_left[0] - points_sorted[1][0], top_left[1] - points_sorted[1][1])
-        d2 = math.hypot(top_left[0] - points_sorted[2][0], top_left[1] - points_sorted[2][1])
-        if d1 != min_rect[2]:
-            bottom_left = points_sorted[1]
-        elif d2 != min_rect[2] and d2 == min_rect[3]:
-            bottom_left = points_sorted[2]
-        else:
-            print "ERROR bottom_right"
-
-        d1 = math.hypot(top_right[0] - points_rev[1][0], top_right[1] - points_rev[1][1])
-        d2 = math.hypot(top_right[0] - points_rev[2][0], top_right[1] - points_rev[2][1])
-        if d1 != min_rect2[2]:
-            bottom_right = points_rev[1]
-        elif d2 != min_rect2[2] and d2 == min_rect2[3]:
-            bottom_right = points_rev[2]
-        else:
-            print "ERROR bottom_right"
 
         # BUGFIX: When the first or last box contains J (for example) the minimum area bounding rectangle is rotated
         # Detect the differences between the rotation angles and use the non rotated bounding rectangle
@@ -122,24 +123,26 @@ def deskew_text(plate):
         if angle1 != 0.0 or angle2 != 0.0:
             a1 = angle1 % 90
             a2 = angle2 % 90
-            diff = abs(abs(angle1) - abs(angle2))
+            diff = abs(abs(a1) - abs(a2))
+            print a1, a2, diff
+
             if diff > 10 and a1 < a2:
                 x, y, box_width, box_height = cv2.boundingRect(contour2)
-                top_right = (x + box_width, y + box_height)
-                bottom_right = (x + box_width, y)
+                bottom_right = (x + box_width, y + box_height)
+                top_right = (x + box_width, y)
                 cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (255, 255, 0), 1)
             elif diff > 10 and a2 < a1:
                 x, y, box_width, box_height = cv2.boundingRect(contour)
-                top_left = (x, y + box_height)
-                bottom_left = (x, y)
+                bottom_left = (x, y + box_height)
+                top_left = (x, y)
                 cv2.rectangle(disp_img, (x, y), (x + box_width, y + box_height), (255, 255, 0), 1)
 
-        top_left = (top_left[0] - border_margin, top_left[1] + border_margin)
-        bottom_left = (bottom_left[0] - border_margin, bottom_left[1] - border_margin)
-        top_right = (top_right[0] + border_margin, top_right[1] + border_margin)
-        bottom_right = (bottom_right[0] + border_margin, bottom_right[1] - border_margin)
+        bottom_left = (bottom_left[0] - border_margin, bottom_left[1] + border_margin)
+        top_left = (top_left[0] - border_margin, top_left[1] - border_margin)
+        bottom_right = (bottom_right[0] + border_margin, bottom_right[1] + border_margin)
+        top_right = (top_right[0] + border_margin, top_right[1] - border_margin)
 
-        corners = np.array([top_left, top_right, bottom_left, bottom_right], np.float32)
+        corners = np.array([bottom_left, bottom_right, top_left, top_right], np.float32)
         dest_points = np.array([(0, img_height), (img_width, img_height), (0, 0), (img_width, 0)], np.float32)
         trans_matrix = cv2.getPerspectiveTransform(corners, dest_points)
         disp_wrapped = cv2.warpPerspective(img, trans_matrix, (img_width, img_height))
@@ -153,10 +156,13 @@ def deskew_text(plate):
         #               (trans_matrix[2][0]*x+trans_matrix[2][1]*y+trans_matrix[2][2]))
         #         cv2.circle(disp_wrapped, (int(xn), int(yn)), 1, (255, 0, 255), thickness=2)
 
-        cv2.circle(disp_img, top_left, 1, (255, 0, 0), thickness=2)
         cv2.circle(disp_img, bottom_left, 1, (255, 0, 0), thickness=2)
-        cv2.circle(disp_img, top_right, 1, (255, 0, 0), thickness=2)
+        display.show_image(disp_img)
+        cv2.circle(disp_img, top_left, 1, (128, 0, 255), thickness=2)
+        display.show_image(disp_img)
         cv2.circle(disp_img, bottom_right, 1, (255, 0, 0), thickness=2)
+        display.show_image(disp_img)
+        cv2.circle(disp_img, top_right, 1, (128, 0, 255), thickness=2)
         display.show_image(disp_img)
         display.show_image(disp_wrapped)
         return disp_wrapped

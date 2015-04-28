@@ -53,7 +53,7 @@ def segment_contours(plate):
             limit_ratio = 5.5
             limit_area = 45.0
             if box_ratio < limit_ratio \
-                    and box_height / float(box_width) < limit_ratio and img_area / box_area < limit_area:
+                    and box_height / float(box_width) < limit_ratio and 4 < img_area / box_area < limit_area:
                 print "Passed\n"
 
                 # TODO: Fill contour without the holes
