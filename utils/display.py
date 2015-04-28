@@ -105,7 +105,6 @@ def get_parts_of_image(img, rectangles, points_sorted=False):
     return ret
 
 
-
 def get_white_pixels(img, rectangles, points_sorted=False):
     """
     Crops the detected rectangles from the image and tries to find any text
@@ -141,6 +140,7 @@ def get_white_pixels(img, rectangles, points_sorted=False):
         ret.append(color_filtered)
     return ret
 
+
 def color_filter(img):
     """
     Filtering image by color, eliminting non-white, non-black and non-gray pixels
@@ -149,11 +149,12 @@ def color_filter(img):
     :return: processed image in grayscale format
     """
     res = img.copy()
-    mask = np.zeros((len(img), len(img[0])))
+    width, height, channel = img.shape
+    mask = np.zeros((width, height))
 
-    for i in range(len(img)):
-        for j in range(len(img[i])):
-            pixel = img[i,j]
+    for i in range(width):
+        for j in range(height):
+            pixel = img[i, j]
             minn = min(pixel)
             maxx = max(pixel)
             if (maxx-minn) <= 40 and maxx < 160:
@@ -162,8 +163,6 @@ def color_filter(img):
                 res[i, j] = 255
 
     res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
-    cv2.imshow('color filter',res)
-    cv2.waitKey(0)
     return res
 
 

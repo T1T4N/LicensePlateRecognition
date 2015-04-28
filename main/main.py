@@ -52,13 +52,13 @@ def main():
                 text = text.strip()
 
                 t2 = ""
-                for i in range(len(text)):
-                    if ord(text[i]) in range(128):
-                        t2 += text[i]
+                for idx in range(len(text)):
+                    if ord(text[idx]) in range(128):
+                        t2 += text[idx]
                 labels.append(t2)
+
                 print t2, conf
                 # display.show_image(box_mod)
-
             multi_plot(boxes, labels, 1, len(boxes))
 
 if __name__ == '__main__':
