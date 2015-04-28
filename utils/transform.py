@@ -157,12 +157,10 @@ def deskew_text(plate):
         #         cv2.circle(disp_wrapped, (int(xn), int(yn)), 1, (255, 0, 255), thickness=2)
 
         cv2.circle(disp_img, bottom_left, 1, (255, 0, 0), thickness=2)
-        display.show_image(disp_img)
-        cv2.circle(disp_img, top_left, 1, (128, 0, 255), thickness=2)
-        display.show_image(disp_img)
+        cv2.circle(disp_img, top_left, 1, (255, 0, 0), thickness=2)
         cv2.circle(disp_img, bottom_right, 1, (255, 0, 0), thickness=2)
-        display.show_image(disp_img)
-        cv2.circle(disp_img, top_right, 1, (128, 0, 255), thickness=2)
+        cv2.circle(disp_img, top_right, 1, (255, 0, 0), thickness=2)
+
         display.show_image(disp_img)
         display.show_image(disp_wrapped)
         return disp_wrapped

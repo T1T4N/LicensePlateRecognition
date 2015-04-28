@@ -105,7 +105,7 @@ def get_parts_of_image(img, rectangles, points_sorted=False):
     return ret
 
 
-def get_white_pixels(img, rectangles, points_sorted=False):
+def get_white_pixels(img, rectangles):
     """
     Crops the detected rectangles from the image and tries to find any text
     used for finding which pixels are not of interest - not black, white or gray
@@ -116,26 +116,8 @@ def get_white_pixels(img, rectangles, points_sorted=False):
     """
 
     ret = []
-    if not points_sorted:
-        pass
-
-    for rect in rectangles:
-        x_min = 999999
-        x_max = 0
-        y_min = 999999
-        y_max = 0
-        for point in rect:
-            if len(point.shape) == 1:
-                x_max = max(x_max, point[0])
-                y_max = max(y_max, point[1])
-                x_min = min(x_min, point[0])
-                y_min = min(y_min, point[1])
-            else:
-                x_max = max(x_max, point[0][0])
-                y_max = max(y_max, point[0][1])
-                x_min = min(x_min, point[0][0])
-                y_min = min(y_min, point[0][1])
-        image_part = img[y_min:y_max, x_min:x_max]
+    parts = get_parts_of_image(img, rectangles)
+    for image_part in parts:
         color_filtered = color_filter(image_part)
         ret.append(color_filtered)
     return ret
