@@ -1,14 +1,18 @@
 __author__ = 'robert'
 
 import math
-
 import numpy as np
-from PIL import Image
 
+from PIL import Image
 from hq2x import hq2x
 
 
 def hq2x_zoom(source_image):
+    """
+    Performs a 2x zoom on a picture using the hqx algorithm
+    :type source_image: numpy.array representing an image
+    :return: np.array representing the zoomed picture
+    """
     source = Image.fromarray(source_image)
     dest = hq2x(source)
     return np.array(dest)
