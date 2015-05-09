@@ -26,7 +26,7 @@ class ThresholdBlurDetector(AbstractDetector):
 
         # Set a min and max area
         # TODO: Adjust coefficients for min and max area
-        min_area = 17 * aspect * 17
+        min_area = 10 * aspect * 10
         max_area = 112 * aspect * 112
 
         # Set aspect ratios with account to error.

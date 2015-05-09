@@ -3,7 +3,7 @@ import os
 
 from detector import ThresholdBlurDetector, MorphologyTransformDetector
 from utils.loader import load_images, get_images_from_dir
-from utils.display import get_parts_of_image, display_rectangles, show_image, multi_plot
+from utils.display import display_rectangles, show_image, multi_plot
 from utils.transform import deskew_lines, deskew_text
 from utils.segment import segment_contours
 from recognizer import TextRecognizer
@@ -16,13 +16,13 @@ def main():
 
     print('OpenCV version: %s' % cv2.__version__)
 
-    image_names = sorted(get_images_from_dir('images'))
+    # image_names = sorted(get_images_from_dir('images'))
     # image_names = ['images' + os.sep + '16.jpg']
     # image_names = ['images' + os.sep + '25.jpg']
     # image_names = ['images' + os.sep + '27.jpg']
     # image_names = ['images' + os.sep + '29.jpg']
     # image_names = ['images' + os.sep + '11.jpg']
-    # image_names = ['images' + os.sep + '05.jpg']
+    image_names = ['images' + os.sep + 'yy.jpg']
 
     images = load_images(image_names)
     for i, src in enumerate(images):
@@ -39,8 +39,11 @@ def main():
 
             # Skew correction using lines detection
             # deskew_line = transform.deskew_lines(processing_plate)
+
             # Skew correction using contours
             img = deskew_text(plate)
+
+            # Cut the picture letter by letter
             boxes = segment_contours(img)
 
             labels = []
