@@ -13,7 +13,7 @@ class ThresholdDetector(AbstractDetector):
     def _check_size(self, candidate, area=-1):
         return True
 
-    def find_rectangles(self):
+    def find_plates(self):
         """
         Find the contours which are convex rectangles
 

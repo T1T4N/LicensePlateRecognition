@@ -1,5 +1,4 @@
 import cv2
-import os
 
 from detector import ThresholdBlurDetector, MorphologyTransformDetector
 from utils.loader import load_images, get_images_from_dir
@@ -16,13 +15,7 @@ def main():
 
     print('OpenCV version: %s' % cv2.__version__)
 
-    # image_names = sorted(get_images_from_dir('images'))
-    # image_names = ['images' + os.sep + '16.jpg']
-    # image_names = ['images' + os.sep + '25.jpg']
-    # image_names = ['images' + os.sep + '27.jpg']
-    # image_names = ['images' + os.sep + '29.jpg']
-    # image_names = ['images' + os.sep + '11.jpg']
-    image_names = ['images' + os.sep + 'yy.jpg']
+    image_names = sorted(get_images_from_dir('images'))
 
     images = load_images(image_names)
     for i, src in enumerate(images):
@@ -30,7 +23,7 @@ def main():
         # detector = MorphologyTransformDetector(src, image_names[i])
 
         # plates[i] = (plate, rectangle_in_original_picture)
-        plates = detector.find_rectangles()
+        plates = detector.find_plates()
 
         display_rectangles(src, [plates[i][1] for i in range(len(plates))])
 

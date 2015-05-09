@@ -10,21 +10,24 @@ class AbstractDetector(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def find_rectangles(self):
+    def find_plates(self):
         """
-        Find positions of the license plates in the image
+        Find the license plates in the image
 
-        :return: Array of rectangles represented as points
+        :rtype: list[(numpy.array, numpy.array)]
+        :return: List of tuples containing the plate image and the plate rectangle location
         """
         pass
 
     @abstractmethod
-    def _check_size(self, candidate, area=-1):
+    def _check_size(self, candidate, area=None):
         """
         Perform size check on the specified rectangle
 
         :param candidate: Rectangle on which to perform the check
-        :param area: Optional if area is given as an argument
+        :type area: float | None
+        :param area: Optional area specified
+        :rtype: bool
         :return: True if conditions satisfied, otherwise False
         """
         pass

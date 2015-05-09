@@ -68,7 +68,7 @@ class MorphologyTransformDetector(AbstractDetector):
             print "Passed\n"
             return True
 
-    def find_rectangles(self):
+    def find_plates(self):
         # self.kernel9 = np.ones((7, 7), np.uint8)
         # self.kernel7 = np.ones((7, 7), np.uint8)
         # self.kernel5 = np.ones((7, 7), np.uint8)
