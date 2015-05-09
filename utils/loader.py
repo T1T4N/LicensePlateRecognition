@@ -1,5 +1,4 @@
 import os
-
 import cv2
 import numpy as np
 
@@ -15,7 +14,8 @@ def get_images_from_dir(directory):
     ret = []
     files = os.listdir(directory)
     for file_name in files:
-        if file_name.lower().endswith(".jpg"):
+        if file_name.lower().endswith(".jpg") and \
+                not file_name.lower().startswith("."):  # Do not consider UNIX hidden files
             ret.append(directory + os.sep + file_name)
     return ret
 
@@ -36,8 +36,8 @@ def load_images(filenames):
 
 def load_image(image):
     """
-
-    :param image: String or cv2::Mat object from from which to initialize detector
+    Loads or copies an image depending on the parameter
+    :param image: String or cv2::Mat object from which to create an image
     :return: cv2::Mat object representing the picture
     """
 
