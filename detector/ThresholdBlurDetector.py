@@ -26,7 +26,7 @@ class ThresholdBlurDetector(AbstractDetector):
 
         # Set a min and max area
         # TODO: Adjust coefficients for min and max area
-        min_area = 10 * aspect * 10
+        min_area = 15 * aspect * 15
         max_area = 112 * aspect * 112
 
         # Set aspect ratios with account to error.
@@ -58,6 +58,18 @@ class ThresholdBlurDetector(AbstractDetector):
             print "Candidate ratio: %f" % candidate_ratio
             print "Passed\n"
             return True
+
+    def _filter_white(self, processing_plate, mask_pixels):
+        # filtering by color
+        white_img = mask_pixels
+        # display.show_image(white_img)
+        processing_copy = processing_plate.copy()
+        for ii in range(len(processing_plate)):
+            for jj in range(len(processing_plate[ii])):
+                if white_img[ii, jj] == 255:  # if white in the filter set it to black
+                    processing_copy[ii, jj] = 0
+        display.show_image(processing_copy, "processed_white")
+        return processing_copy
 
     def find_rectangles(self):
         """
@@ -108,28 +120,20 @@ class ThresholdBlurDetector(AbstractDetector):
         processing_plates = display.get_parts_of_image(processing_img, rectangles)
         ret = []
 
-        # getting non-gray, non-white and non-black pixels
-        white_pixels = display.get_white_pixels(self.image, rectangles)
+        # Masking every color pixel in every plate rectangle from the original picture
+        mask_pixels = display.get_white_pixels(self.image, rectangles)
 
         for i, processing_plate in enumerate(processing_plates):
             img_height, img_width = processing_plate.shape
             img_area = img_height * img_width
 
-            # filtering by color
-            white_img = white_pixels[i]
-            # display.show_image(white_img)
-            processing_copy = processing_plate.copy()
-            for ii in range(len(processing_plate)):
-                for jj in range(len(processing_plate[ii])):
-                    if white_img[ii, jj] == 255:  # if white in the filter set it to black
-                        processing_copy[ii, jj] = 0
-            # display.show_image(processing_copy, "processed_white")
-            # processing_plate = processing_copy.copy()
+            # masked_plate = self._filter_white(processing_plate, mask_pixels[i])
+            # processing_plate = masked_plate
 
-            # TODO: do not include some parts based on different parameters
             if img_area < 4500:
-                ret.append((cv2.cvtColor(image.hq2x_zoom(processing_plate), cv2.COLOR_BGR2GRAY), rectangles[i]))
+                ret.append((
+                cv2.bitwise_not(cv2.cvtColor(image.hq2x_zoom(processing_plate), cv2.COLOR_BGR2GRAY)), rectangles[i]))
             else:
-                ret.append((processing_plate, rectangles[i]))
+                ret.append((cv2.bitwise_not(processing_plate), rectangles[i]))
 
         return ret

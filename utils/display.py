@@ -8,7 +8,7 @@ def show_image(image, image_label="", image_title='image', resize=True):
     Show the cv2::Mat image in a window and waits for a key
 
     :param image: Image to be shown
-    :param image_label: Option image filename
+    :param image_label: Optional image filename
     :param image_title: Optional title for the window
     """
 
@@ -43,34 +43,35 @@ def multi_plot(images, titles, rows, cols):
     plt.show()  # Show the matrix of images
 
 
-def display_rectangles(image, rectangles):
+def display_rectangles(image, rectangles, color=(0, 255, 0)):
     """
-    Draw convex rectangle contours with green color on top of the given image
+    Draw convex rectangle contours on top of the given image
 
     :param image: Image on top of which to paint the contours
     :param rectangles: Array of convex rectangles to be painted
+    :param color: Optional color for the rectangles. Default is green color
     """
 
     src2 = image.copy()
-    color = (0, 255, 0)
     cv2.drawContours(src2, rectangles, -1, color, 2)
     show_image(src2)
 
 
-def draw_contours(image, contours, image_label=""):
+def draw_contours(image, contours, image_label="", color=(0, 255, 0)):
     """
     Plot specified contours on the specified image
     :param image: cv2::Mat image on which to plot
     :param contours: List of contours to be plotted
+    :param image_label: Optional label for the image
+    :param color: Optional color for the contours. Default is green color
     """
 
     src = image.copy()
-    color = (0, 255, 0)
     cv2.drawContours(src, contours, -1, color, 1)
     show_image(src, image_label, 'Contours')
 
 
-def get_parts_of_image(img, rectangles, points_sorted=False):
+def get_parts_of_image(img, rectangles):
     """
     Crops the detected rectangles from the image and tries to find any text
 
@@ -80,10 +81,6 @@ def get_parts_of_image(img, rectangles, points_sorted=False):
     """
 
     ret = []
-    if not points_sorted:
-        # TODO: sort points by x axis
-        pass
-
     for rect in rectangles:
         x_min = 999999
         x_max = 0
@@ -107,8 +104,7 @@ def get_parts_of_image(img, rectangles, points_sorted=False):
 
 def get_white_pixels(img, rectangles):
     """
-    Crops the detected rectangles from the image and tries to find any text
-    used for finding which pixels are not of interest - not black, white or gray
+    Crops the detected rectangles from the image and masks pixels that aren't black, white or gray
 
     :param img: Source image from which to crop
     :param rectangles: List of rectangles representing crop areas
@@ -125,10 +121,10 @@ def get_white_pixels(img, rectangles):
 
 def color_filter(img):
     """
-    Filtering image by color, eliminating non-white, non-black and non-gray pixels
+    Filtering image by color, masking every pixel except black, white or gray
 
     :param img: image to be processed
-    :return: processed image in greyscale format
+    :return: processed image in grayscale format
     """
     res = img.copy()
     width, height, channel = img.shape
@@ -146,36 +142,3 @@ def color_filter(img):
 
     res = cv2.cvtColor(res, cv2.COLOR_BGR2GRAY)
     return res
-
-
-def process_plate_image(img):
-    """
-    Final image processing of the license plate image crop
-
-    :param img: Plate image to process
-    :return: Processed cv2::Mat image
-    """
-
-    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # cv2.bitwise_not(img, img)
-
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    gray = cv2.adaptiveBilateralFilter(gray, (7, 7), 15)
-    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-    show_image(thresh, 'Process 1 White')
-
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    lower = (0, 0, 0)
-    upper = (0, 0, 255)
-
-    lower = np.array(lower, dtype="uint8")
-    upper = np.array(upper, dtype="uint8")
-
-    # find the colors within the specified boundaries and apply the mask
-    mask = cv2.inRange(hsv, lower, upper)
-    output = cv2.bitwise_and(img, img, mask=mask)
-
-    # ret,gray = cv2.threshold(img, 100, 255, cv2.THRESH_BINARY)
-    # gray = cv2.cvtColor(gray, cv2.COLOR_BGR2GRAY)
-    show_image(output, 'Process 2 White')
-    return output

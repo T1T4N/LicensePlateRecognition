@@ -50,7 +50,7 @@ def main():
             for box in boxes:
                 # box_mod = image.hq2x_zoom(cv2.cvtColor(box, cv2.COLOR_GRAY2BGR))
                 # box_mod = cv2.cvtColor(box, cv2.COLOR_GRAY2BGR)
-                tr = TextRecognizer(cv2.bitwise_not(box))
+                tr = TextRecognizer(box)
                 text, conf = tr.find_text()
                 text = text.strip()
 
