@@ -78,7 +78,7 @@ class ThresholdBlurDetector(AbstractDetector):
         :return: List of all found rectangle contours
         """
 
-        # Create a greyscale version of the image
+        # Create a grayscale version of the image
         processing_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         # Blur the image
@@ -90,7 +90,7 @@ class ThresholdBlurDetector(AbstractDetector):
         # processing_img = cv2.GaussianBlur(processing_img, (7, 7), 3)
 
         if __debug__:
-            display.show_image(processing_img, self.label, 'Grey')
+            display.show_image(processing_img, self.label, 'Gray')
 
         processing_img = cv2.adaptiveThreshold(processing_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                cv2.THRESH_BINARY_INV, 11, 2)
