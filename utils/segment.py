@@ -6,8 +6,11 @@ import display
 def segment_contours(plate):
     """
     Finds the contours satisfying the required constraints
-    :type plate: A numpy.array representing a gray image of the license plate
-    :return: A list of numpy.array representing BGR images of the contours
+
+    :type plate: numpy.array
+    :param plate: A gray image of the license plate
+    :rtype: list[numpy.array]
+    :return: BGR images of the contours
     """
 
     img = plate.copy()
@@ -60,7 +63,7 @@ def segment_contours(plate):
             print "Area ratio: %.3f" % (img_area / box_area)
 
             # TODO: Square in the middle always caught, adjust box_ratio upper limit
-            # TODO: Number one has ratio ~ 4.5: very thin and high
+            # TODO: Number 1 (one) has ratio ~ 4.5: very thin and high
             limit_ratio = 5.5
             limit_area = 45.0
             if box_ratio < limit_ratio and box_height / float(box_width) < limit_ratio \

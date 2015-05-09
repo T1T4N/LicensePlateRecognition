@@ -7,8 +7,10 @@ def get_images_from_dir(directory):
     """
     Get the names of every JPG image in a directory
 
-    :param directory: String representing an absolute or relative path to a directory
-    :return: List of strings containing names of the JPG images in the directory
+    :type directory: str
+    :param directory: Absolute or relative path to a directory
+    :rtype: list[str]
+    :return: Names of the JPG images in the directory
     """
 
     ret = []
@@ -24,8 +26,10 @@ def load_images(filenames):
     """
     Load images represented by an array of filenames
 
-    :param filenames: List of strings holding filenames of the images
-    :return: List of cv2::Mat objects representing the images
+    :type filenames: list[str]
+    :param filenames: Filenames of the images
+    :rtype: list[numpy.array]
+    :return: The loaded images
     """
 
     ret = []
@@ -37,8 +41,12 @@ def load_images(filenames):
 def load_image(image):
     """
     Loads or copies an image depending on the parameter
-    :param image: String or cv2::Mat object from which to create an image
-    :return: cv2::Mat object representing the picture
+
+    :type image: str | numpy.array
+    :param image: Object from which to create an image
+    :rtype: numpy.array
+    :return: The loaded picture
+    :raises: ValueError if image type is not str or numpy.array
     """
 
     if type(image) == str:
