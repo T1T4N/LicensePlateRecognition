@@ -1,4 +1,3 @@
-__author__ = 'robert'
 import cv2
 import tesseract
 
@@ -29,10 +28,13 @@ class TextRecognizer(object):
 
         image1 = cv2.copyMakeBorder(image0, offset, offset, offset, offset, cv2.BORDER_CONSTANT, value=(255, 255, 255))
 
+        # Initialize Tesseract with tessdata in the current folder
         api = tesseract.TessBaseAPI()
         api.Init(".", "eng", tesseract.OEM_DEFAULT)
+
         # Allow only the specified characters
         api.SetVariable("tessedit_char_whitelist", "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
         # Assume a single uniform block of text
         api.SetPageSegMode(tesseract.PSM_SINGLE_BLOCK)
 
@@ -49,6 +51,7 @@ class TextRecognizer(object):
         # Method 2:
         cvmat_image = cv2.cv.fromarray(image1)
         iplimage = cv2.cv.GetImage(cvmat_image)
+
         tesseract.SetCvImage(iplimage, api)
         text2 = api.GetUTF8Text()
         conf2 = api.MeanTextConf()

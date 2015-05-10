@@ -34,15 +34,17 @@ def segment_contours(plate):
 
             limit_ratio = 5.5
             limit_area = 45.0
-            if not (box_ratio < limit_ratio
-                    and box_height / float(box_width) < limit_ratio and img_area / box_area < limit_area) \
-                    and float(img_area) / box_area > limit_area:
+            if not (
+                                box_ratio < limit_ratio
+                        and box_height / float(box_width) < limit_ratio
+                    and img_area / box_area < limit_area
+            ) and float(img_area) / box_area > limit_area:
                 cv2.drawContours(img, [ct], 0, (0, 0, 0), thickness=-1)
                 cv2.drawContours(disp_img, [ct], 0, (0, 0, 0), thickness=-1)
 
     boxes = []
     # Find the contours satisfying the conditions i.e the license plate characters
-    # RETR_CCOMP returns a two level hierarchy of the contours: parent and children
+    # RETR_TREE returns a hierarchy of the contours: parent and children
     contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     for i, ct in enumerate(contours):
 
@@ -87,7 +89,6 @@ def segment_contours(plate):
                 if img_area / box_area > limit_area:
                     cv2.drawContours(img, [ct], 0, (0, 0, 0), thickness=-1)
                     cv2.drawContours(disp_img, [ct], 0, (0, 0, 0), thickness=-1)
-                    # display.show_image(disp_img)
 
     # EXPERIMENTAL
     # The idea is to first fill a contour with a solid color

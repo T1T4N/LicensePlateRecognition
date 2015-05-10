@@ -211,8 +211,9 @@ def deskew_text(plate):
         cv2.circle(disp_img, bottom_right, 1, (255, 0, 0), thickness=2)
         cv2.circle(disp_img, top_right, 1, (255, 0, 0), thickness=2)
 
-        display.show_image(disp_img)
-        display.show_image(disp_wrapped)
+        if __debug__:
+            display.show_image(disp_img)
+            display.show_image(disp_wrapped)
         return disp_wrapped
 
     return img

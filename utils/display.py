@@ -1,11 +1,12 @@
 import cv2
 import numpy as np
+
 from matplotlib import pyplot as plt
 
 
 def show_image(image, image_label="", image_title='image', resize=True):
     """
-    Show the cv2::Mat image in a window and wait for a key
+    Show the image in a window and wait for a key
 
     :type image: numpy.array
     :param image: Image to be shown
@@ -16,13 +17,12 @@ def show_image(image, image_label="", image_title='image', resize=True):
     """
 
     title = image_title + " " + image_label
-    cv2.namedWindow(title, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(title, cv2.WINDOW_NORMAL)  # Create the window
     cv2.imshow(title, image)
     if resize:
         cv2.resizeWindow(title, 1050, 615)
-    cv2.waitKey(0)
+    cv2.waitKey(0)  # Wait for a keypress
     cv2.destroyWindow(title)
-    # cv2.imwrite('test.jpg', src)
 
 
 def multi_plot(images, titles, rows, cols):
@@ -37,6 +37,7 @@ def multi_plot(images, titles, rows, cols):
     :param rows: Row count of the matrix
     :type cols: int
     :param cols: Column count of the matrix
+    :raises: ValueError if number of titles is not equal with number of images
     """
 
     if len(titles) != len(images):
@@ -115,6 +116,8 @@ def get_parts_of_image(img, rectangles):
                 y_max = max(y_max, point[0][1])
                 x_min = min(x_min, point[0][0])
                 y_min = min(y_min, point[0][1])
+
+        # Get the part of the image
         image_part = img[y_min:y_max, x_min:x_max]
         ret.append(image_part)
     return ret

@@ -1,5 +1,3 @@
-__author__ = 'robert'
-
 import math
 import numpy as np
 
@@ -46,17 +44,13 @@ def calculate_size(points):
 
     width = -1
     if d11 < d12:
-        width = max(width,
-                    math.hypot(points[0][0] - points[2][0], points[0][1] - points[2][1]))
+        width = max(width, math.hypot(points[0][0] - points[2][0], points[0][1] - points[2][1]))
     else:
-        width = max(width,
-                    math.hypot(points[0][0] - points[3][0], points[0][1] - points[3][1]))
+        width = max(width, math.hypot(points[0][0] - points[3][0], points[0][1] - points[3][1]))
 
     if d21 < d22:
-        width = max(width,
-                    math.hypot(points[1][0] - points[2][0], points[1][1] - points[2][1]))
+        width = max(width, math.hypot(points[1][0] - points[2][0], points[1][1] - points[2][1]))
     else:
-        width = max(width,
-                    math.hypot(points[1][0] - points[3][0], points[1][1] - points[3][1]))
+        width = max(width, math.hypot(points[1][0] - points[3][0], points[1][1] - points[3][1]))
 
     return width, height

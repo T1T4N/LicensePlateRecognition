@@ -16,8 +16,7 @@ def get_images_from_dir(directory):
     ret = []
     files = os.listdir(directory)
     for file_name in files:
-        if file_name.lower().endswith(".jpg") and \
-                not file_name.lower().startswith("."):  # Do not consider UNIX hidden files
+        if file_name.lower().endswith(".jpg"):
             ret.append(directory + os.sep + file_name)
     return ret
 
