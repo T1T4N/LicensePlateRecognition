@@ -1,4 +1,3 @@
-__author__ = 'robert'
 import cv2
 
 from detector import AbstractDetector
@@ -63,9 +62,6 @@ class CannyDetector(AbstractDetector):
             candidate_ratio = 1 / candidate_ratio
 
         if not min_area <= candidate_area <= max_area or not min_ratio <= candidate_ratio <= max_ratio:
-            print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
-            print "Candidate area: %f" % candidate_area
-            print "Candidate ratio: %f" % candidate_ratio
             return False
         else:
             print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
@@ -76,25 +72,24 @@ class CannyDetector(AbstractDetector):
 
     def find_plates(self):
         """
-        Find the contours which are convex rectangles
+        Find the license plates in the image
 
-        :return: List of all found rectangle contours
+        :rtype: list[(numpy.array, numpy.array)]
+        :return: List of tuples containing the plate image and the plate rectangle location
+            The plates returned must be a grayscale image with black background and white characters
         """
 
-        # Create a greyscale version of the image
-        grey_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        # Create a grayscale version of the image
+        gray_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         # Blur the image
-        grey_img = cv2.adaptiveBilateralFilter(grey_img, (11, 11), 100)
+        gray_img = cv2.adaptiveBilateralFilter(gray_img, (11, 11), 100)
 
         if __debug__:
-            display.show_image(grey_img, 'Gray')
+            display.show_image(gray_img, 'Gray')
 
-        # blockSize=11, (3,3), 0: 4 plates out of 6 pics
-        # blockSize=21, (3,3), 0: 8 plates out of 13 pics
-        # blockSize=17, (3,3), 0: 10 plates out of 13 pics
         blur_kernel_size = (3, 3)
-        thresh = cv2.adaptiveThreshold(grey_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 17, 2)
+        thresh = cv2.adaptiveThreshold(gray_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 17, 2)
         blurred = cv2.GaussianBlur(thresh, blur_kernel_size, 0)
 
         if __debug__:

@@ -16,6 +16,7 @@ class AbstractDetector(object):
 
         :rtype: list[(numpy.array, numpy.array)]
         :return: List of tuples containing the plate image and the plate rectangle location
+            The plates returned must be a grayscale image with black background and white characters
         """
         pass
 

@@ -15,14 +15,13 @@ def main():
 
     print('OpenCV version: %s' % cv2.__version__)
 
-    # image_names = sorted(get_images_from_dir('images'))
-    image_names = ['images/13.jpg']
+    image_names = sorted(get_images_from_dir('images'))
 
     images = load_images(image_names)
     for i, src in enumerate(images):
-        # detector = ThresholdBlurDetector(src, image_names[i])
+        detector = ThresholdBlurDetector(src, image_names[i])
         # detector = CannyDetector(src, image_names[i])
-        detector = MorphologyTransformDetector(src, image_names[i])
+        # detector = MorphologyTransformDetector(src, image_names[i])
 
         plates = detector.find_plates()
         display_rectangles(src, [plates[i][1] for i in range(len(plates))])
@@ -52,7 +51,6 @@ def main():
                 labels.append(t2)
 
                 print t2, conf
-                # display.show_image(box_mod)
             multi_plot(boxes, labels, 1, len(boxes))
 
 if __name__ == '__main__':

@@ -87,9 +87,11 @@ class ThresholdBlurDetector(AbstractDetector):
 
     def find_plates(self):
         """
-        Find the contours which are convex rectangles
+        Find the license plates in the image
 
-        :return: List of all found rectangle contours
+        :rtype: list[(numpy.array, numpy.array)]
+        :return: List of tuples containing the plate image and the plate rectangle location.
+            The plates returned must be a grayscale image with black background and white characters
         """
 
         # Create a grayscale version of the image
@@ -111,8 +113,7 @@ class ThresholdBlurDetector(AbstractDetector):
             display.show_image(processing_img, self.label, 'Threshold')
 
         # Find the contours in the image. MODIFIES source image, hence a copy is used
-        processing_copy = processing_img.copy()
-        contours, hierarchy = cv2.findContours(processing_copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+        contours, hierarchy = cv2.findContours(processing_img.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
 
         if __debug__:
             display.draw_contours(self.image, contours, self.label)
