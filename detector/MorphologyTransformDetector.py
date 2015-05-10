@@ -75,11 +75,11 @@ class MorphologyTransformDetector(AbstractDetector):
 
         # create a grayscale version of the image
         processing_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        img_height, img_width = processing_img.shape
+        img_area = img_height * img_width
 
         # Blur the image
         processing_img = cv2.adaptiveBilateralFilter(processing_img, (11, 11), 100)
-        # gray_img = cv2.bilateralFilter(gray_img, 5, 100, 100)
-        # gray_img = cv2.blur(gray_img, (5, 5))
 
         if __debug__:
             display.show_image(processing_img, self.label, 'Gray')
@@ -89,9 +89,8 @@ class MorphologyTransformDetector(AbstractDetector):
         if __debug__:
             display.show_image(sobel_img, self.label, 'Sobel')
 
-        # TODO: Try to enlarge white area
-        # sobel_img = cv2.morphologyEx(sobel_img, cv2.MORPH_TOPHAT, kernel3)
-        # show_image(sobel_img)
+        # sobel_img = cv2.morphologyEx(sobel_img, cv2.MORPH_TOPHAT, (3, 3))
+        # display.show_image(sobel_img)
 
         # Apply Otsu's Binary Thresholding
         ret, sobel_img = cv2.threshold(sobel_img, 0, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY)
@@ -99,7 +98,8 @@ class MorphologyTransformDetector(AbstractDetector):
             display.show_image(sobel_img, self.label, 'Otsu Threshold')
 
         # TODO: Variable kernel size depending on image size and/or perspective
-        k_size = (29, 3)
+        # k_size = (50, 5)    # Kernel for a very upclose picture
+        k_size = (10, 5)  # Kernel for a distant picture
         element = cv2.getStructuringElement(cv2.MORPH_RECT, k_size)
 
         # Apply the Close morphology Transformation
@@ -123,17 +123,18 @@ class MorphologyTransformDetector(AbstractDetector):
 
         processing_plates = display.get_parts_of_image(processing_img, rectangles)
         ret = []
-
+        display.display_rectangles(self.image, rectangles)
         for i, processing_plate in enumerate(processing_plates):
-            processing_plate = cv2.bitwise_not(processing_plate)
-            a, processing_plate = cv2.threshold(processing_plate, 50, 255, cv2.THRESH_OTSU)
+            if processing_plate is not None and len(processing_plate) > 0:
+                processing_plate = cv2.bitwise_not(processing_plate)
+                a, processing_plate = cv2.threshold(processing_plate, 50, 255, cv2.THRESH_OTSU)
 
-            img_width, img_height = processing_plate.shape
-            img_area = img_height * img_width
+                img_width, img_height = processing_plate.shape
+                img_area = img_height * img_width
 
-            if img_area < 4500:
-                ret.append((cv2.cvtColor(image.hq2x_zoom(processing_plate), cv2.COLOR_BGR2GRAY), rectangles[i]))
-            else:
-                ret.append((processing_plate, rectangles[i]))
+                if img_area < 4500:
+                    ret.append((cv2.cvtColor(image.hq2x_zoom(processing_plate), cv2.COLOR_BGR2GRAY), rectangles[i]))
+                else:
+                    ret.append((processing_plate, rectangles[i]))
 
         return ret
