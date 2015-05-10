@@ -1,11 +1,11 @@
+__author__ = 'robert'
 import cv2
 
 from detector import AbstractDetector
 from utils import loader, display, image
 
 
-class ThresholdBlurDetector(AbstractDetector):
-
+class CannyDetector(AbstractDetector):
     def __init__(self, image, label=""):
         """
         Initialize the detector with an image an a label
@@ -60,6 +60,9 @@ class ThresholdBlurDetector(AbstractDetector):
             candidate_ratio = 1 / candidate_ratio
 
         if not min_area <= candidate_area <= max_area or not min_ratio <= candidate_ratio <= max_ratio:
+            print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
+            print "Candidate area: %f" % candidate_area
+            print "Candidate ratio: %f" % candidate_ratio
             return False
         else:
             print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
@@ -68,21 +71,6 @@ class ThresholdBlurDetector(AbstractDetector):
             print "Passed\n"
             return True
 
-    def _filter_white(self, processing_plate, mask_pixels):
-        """
-        Filter every color pixel from a plate
-        """
-
-        white_img = mask_pixels
-        # display.show_image(white_img)
-        processing_copy = processing_plate.copy()
-        for ii in range(len(processing_plate)):
-            for jj in range(len(processing_plate[ii])):
-                if white_img[ii, jj] == 255:  # if white in the filter set it to black
-                    processing_copy[ii, jj] = 0
-        # display.show_image(processing_copy, "processed_white")
-        return processing_copy
-
     def find_plates(self):
         """
         Find the contours which are convex rectangles
@@ -90,55 +78,54 @@ class ThresholdBlurDetector(AbstractDetector):
         :return: List of all found rectangle contours
         """
 
-        # Create a grayscale version of the image
-        processing_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        # Create a greyscale version of the image
+        grey_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         # Blur the image
-        kernel_size = (7, 7)
-        processing_img = cv2.adaptiveBilateralFilter(processing_img, kernel_size, 15)
-        # processing_img = cv2.GaussianBlur(processing_img, (7, 7), 3)
+        grey_img = cv2.adaptiveBilateralFilter(grey_img, (11, 11), 100)
 
         if __debug__:
-            display.show_image(processing_img, self.label, 'Gray')
+            display.show_image(grey_img, 'Gray')
 
-        # Threshold the image using an adaptive algorithm
-        processing_img = cv2.adaptiveThreshold(processing_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                               cv2.THRESH_BINARY_INV, 11, 2)
-
-        if __debug__:
-            display.show_image(processing_img, self.label, 'Threshold')
-
-        # Find the contours in the image. MODIFIES source image, hence a copy is used
-        processing_copy = processing_img.copy()
-        contours, hierarchy = cv2.findContours(processing_copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
+        # blockSize=11, (3,3), 0: 4 plates out of 6 pics
+        # blockSize=21, (3,3), 0: 8 plates out of 13 pics
+        # blockSize=17, (3,3), 0: 10 plates out of 13 pics
+        blur_kernel_size = (3, 3)
+        thresh = cv2.adaptiveThreshold(grey_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 17, 2)
+        blurred = cv2.GaussianBlur(thresh, blur_kernel_size, 0)
 
         if __debug__:
-            display.draw_contours(self.image, contours, self.label)
+            display.show_image(blurred, 'Blurred')
+
+        edges = cv2.Canny(blurred, 100, 100, 3)
+        if __debug__:
+            display.show_image(edges, 'Canny edges')
+
+        contours, hierarchy = cv2.findContours(edges.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        if __debug__:
+            display.draw_contours(self.image, contours)
 
         rectangles = []
         for i in contours:
-            area = cv2.contourArea(i)  # Calculate the area of the contour
-            if area > 200:  # Trivial check
-                peri = cv2.arcLength(i, True)  # Calculate a contour perimeter
-                approx = cv2.approxPolyDP(i, 0.045 * peri, True)  # Approximate the curve using a polygon
+            area = cv2.contourArea(i)
+            if area > 50:
+                peri = cv2.arcLength(i, True)
+                approx = cv2.approxPolyDP(i, 0.02 * peri, True)
 
-                # Consider the polygon only if it is convex and has 4 edges
                 if len(approx) == 4 and cv2.isContourConvex(approx):
                     if self._check_size(approx):
                         rectangles.append(approx)
 
-        processing_plates = display.get_parts_of_image(processing_img, rectangles)
+        processing_plates = display.get_parts_of_image(self.image, rectangles)
         ret = []
 
-        # Experimental: Mask every color pixel in every plate rectangle from the original picture
-        # mask_pixels = display.get_white_pixels(self.image, rectangles)
-
         for i, processing_plate in enumerate(processing_plates):
+            processing_plate = cv2.cvtColor(processing_plate, cv2.COLOR_BGR2GRAY)
+            processing_plate = cv2.bitwise_not(processing_plate)
+            a, processing_plate = cv2.threshold(processing_plate, 50, 255, cv2.THRESH_OTSU)
+
             img_height, img_width = processing_plate.shape
             img_area = img_height * img_width
-
-            # masked_plate = self._filter_white(processing_plate, mask_pixels[i])
-            # processing_plate = masked_plate
 
             # If the area of the plate is below 4500, perform hq2x on the plate
             if img_area < 4500:

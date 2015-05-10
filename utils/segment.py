@@ -43,7 +43,7 @@ def segment_contours(plate):
     boxes = []
     # Find the contours satisfying the conditions i.e the license plate characters
     # RETR_CCOMP returns a two level hierarchy of the contours: parent and children
-    contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     for i, ct in enumerate(contours):
 
         # Skip the contour if it has a parent contour

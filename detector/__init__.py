@@ -2,3 +2,4 @@ __author__ = 'Robert'
 from AbstractDetector import AbstractDetector
 from MorphologyTransformDetector import MorphologyTransformDetector
 from ThresholdBlurDetector import ThresholdBlurDetector
+from CannyDetector import CannyDetector
