@@ -80,7 +80,7 @@ class MorphologyTransformDetector(AbstractDetector):
 
         # Create a grayscale version of the image
         processing_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-        img_height, img_width = self.image.shape
+        img_height, img_width = processing_img.shape
         img_area = img_height * img_width
 
         # Blur the image
