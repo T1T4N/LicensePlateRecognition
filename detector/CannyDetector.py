@@ -6,6 +6,10 @@ from utils import loader, display, image
 
 
 class CannyDetector(AbstractDetector):
+    """
+    Detector that uses canny edge detection to detect license plates
+    """
+
     def __init__(self, image, label=""):
         """
         Initialize the detector with an image an a label
@@ -25,7 +29,6 @@ class CannyDetector(AbstractDetector):
 
         :type candidate: list[numpy.array]
         :param candidate: ApproxPolyDP on which to perform the check
-
         :rtype: bool
         :return: True if conditions satisfied, otherwise False
         """

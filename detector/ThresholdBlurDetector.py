@@ -5,6 +5,9 @@ from utils import loader, display, image
 
 
 class ThresholdBlurDetector(AbstractDetector):
+    """
+    Detector that uses blurring, thresholding image transformations and finding contours to detect license plates
+    """
 
     def __init__(self, image, label=""):
         """
@@ -25,7 +28,6 @@ class ThresholdBlurDetector(AbstractDetector):
 
         :type candidate: list[numpy.array]
         :param candidate: ApproxPolyDP on which to perform the check
-
         :rtype: bool
         :return: True if conditions satisfied, otherwise False
         """

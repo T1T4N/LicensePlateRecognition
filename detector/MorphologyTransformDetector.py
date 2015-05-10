@@ -12,17 +12,24 @@ class MorphologyTransformDetector(AbstractDetector):
 
     def __init__(self, image, label=""):
         """
-        Initialize detector with the given image
-        :param image: String or cv2::Mat object from from which to initialize detector
+        Initialize the detector with an image an a label
+
+        :type image: numpy.ndarray
+        :param image: Image to be processed
+        :type label: str
+        :param label: Optional label for the image
         """
+
         self.image = loader.load_image(image)
         self.label = label
 
-    def _check_size(self, candidate, area=-1):
+    def _check_size(self, candidate, area=None):
         """
         Check size with respect to aspect ratio of a standard license plate
 
+        :type candidate: list[numpy.array]
         :param candidate: ApproxPolyDP on which to perform the check
+        :rtype: bool
         :return: True if conditions satisfied, otherwise False
         """
 
@@ -34,7 +41,7 @@ class MorphologyTransformDetector(AbstractDetector):
 
         # Set a min and max area
         # TODO: Adjust coefficients for min and max area
-        min_area = 17 * aspect * 17
+        min_area = 15 * aspect * 15
         max_area = 112 * aspect * 112
 
         # Set aspect ratios with account to error.
@@ -47,7 +54,7 @@ class MorphologyTransformDetector(AbstractDetector):
 
         candidate_width, candidate_height = image.calculate_size(coordinates)
 
-        candidate_area = candidate_height * candidate_width
+        candidate_area = candidate_height * candidate_width if area is None else area
         if candidate_height == 0.0 or candidate_width == 0.0:
             return False
 
@@ -55,11 +62,7 @@ class MorphologyTransformDetector(AbstractDetector):
         if candidate_ratio < 1:
             candidate_ratio = 1 / candidate_ratio
 
-        if (candidate_area < min_area or candidate_area > max_area) \
-                or (candidate_ratio < min_ratio or candidate_ratio > max_ratio):
-            # print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
-            # print "Candidate area: %f" % candidate_area
-            # print "Candidate ratio: %f\n" % candidate_ratio
+        if not min_area <= candidate_area <= max_area or not min_ratio <= candidate_ratio <= max_ratio:
             return False
         else:
             print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
@@ -69,21 +72,17 @@ class MorphologyTransformDetector(AbstractDetector):
             return True
 
     def find_plates(self):
-        # self.kernel9 = np.ones((7, 7), np.uint8)
-        # self.kernel7 = np.ones((7, 7), np.uint8)
-        # self.kernel5 = np.ones((7, 7), np.uint8)
-        # self.kernel3 = np.ones((7, 7), np.uint8)
 
-        # create a greyscale version of the image
+        # create a grayscale version of the image
         processing_img = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
 
         # Blur the image
         processing_img = cv2.adaptiveBilateralFilter(processing_img, (11, 11), 100)
-        # grey_img = cv2.bilateralFilter(grey_img, 5, 100, 100)
-        # grey_img = cv2.blur(grey_img, (5, 5))
+        # gray_img = cv2.bilateralFilter(gray_img, 5, 100, 100)
+        # gray_img = cv2.blur(gray_img, (5, 5))
 
         if __debug__:
-            display.show_image(processing_img, self.label, 'Grey')
+            display.show_image(processing_img, self.label, 'Gray')
 
         # Apply Sobel filter on the image
         sobel_img = cv2.Sobel(processing_img, cv2.CV_8U, 1, 0, ksize=3, scale=1, delta=0)
@@ -113,9 +112,6 @@ class MorphologyTransformDetector(AbstractDetector):
         if __debug__:
             display.draw_contours(self.image, contours, self.label)
 
-        # display.show_image(processing_img)
-        # display.show_image(sobel_img)
-
         rectangles = []
         for itc in contours:
             mr = cv2.minAreaRect(itc)  # Minimum enclosing rectangle
@@ -126,26 +122,15 @@ class MorphologyTransformDetector(AbstractDetector):
                 rectangles.append(np.int0(box))  # Rotated minimum enclosing rectangle
 
         processing_plates = display.get_parts_of_image(processing_img, rectangles)
-        # white_pixels = display.get_white_pixels(self.image, rectangles)
         ret = []
 
         for i, processing_plate in enumerate(processing_plates):
-            img = processing_plate
-            img_width, img_height = img.shape
+            processing_plate = cv2.bitwise_not(processing_plate)
+            a, processing_plate = cv2.threshold(processing_plate, 50, 255, cv2.THRESH_OTSU)
+
+            img_width, img_height = processing_plate.shape
             img_area = img_height * img_width
 
-            # filtering by color
-            # white_img = white_pixels[i]
-            # # display.show_image(white_img)
-            # processing_copy = img.copy()
-            # for ii in range(img_width):
-            # for jj in range(img_height):
-            #         if white_img[ii, jj] == 255:  # if white in the filter set it to black
-            #             processing_copy[ii, jj] = 0
-            # display.show_image(processing_copy, "processed_white")
-            # processing_plate = processing_copy.copy()
-
-            # TODO: do not include some parts based on different parameters
             if img_area < 4500:
                 ret.append((cv2.cvtColor(image.hq2x_zoom(processing_plate), cv2.COLOR_BGR2GRAY), rectangles[i]))
             else:
