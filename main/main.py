@@ -16,8 +16,8 @@ def main():
     print('OpenCV version: %s' % cv2.__version__)
 
     image_names = sorted(get_images_from_dir('images'))
-
     images = load_images(image_names)
+
     for i, src in enumerate(images):
         detector = ThresholdBlurDetector(src, image_names[i])
         # detector = CannyDetector(src, image_names[i])
@@ -29,8 +29,10 @@ def main():
         for plate, original_rectangle in plates:
             show_image(plate, resize=True)
 
+            # CautionL The following methods require the plate to have black background and white characters
+
             # Skew correction using lines detection
-            # deskew_line = transform.deskew_lines(processing_plate)
+            # img = transform.deskew_lines(plate)
 
             # Skew correction using contours
             img = deskew_text(plate)
@@ -38,19 +40,29 @@ def main():
             # Cut the picture letter by letter
             boxes = segment_contours(img)
 
+            ########################################
+            # Any detected character (box) modification should be done here
+            ########################################
+
             labels = []
             for box in boxes:
-                tr = TextRecognizer(cv2.bitwise_not(box))
-                text, conf = tr.find_text()
+                # Inverts the character image so it has a white background and black character
+                box = cv2.bitwise_not(box)
+
+                # Initialize Tesseract for this image
+                tr = TextRecognizer(box)
+                text, conf = tr.find_text()  # Detect text with confidence level
                 text = text.strip()
 
+                # Cleaning the text of invalid values
                 t2 = ""
                 for idx in range(len(text)):
                     if ord(text[idx]) in range(128):
                         t2 += text[idx]
-                labels.append(t2)
+                # Add a label to the list
+                labels.append(t2 + ", " + str(conf))
 
-                print t2, conf
+            # Display each box with a label above it
             multi_plot(boxes, labels, 1, len(boxes))
 
 if __name__ == '__main__':
