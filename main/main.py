@@ -70,14 +70,17 @@ def main():
                     plate_text += t2
 
                 # Add the detected plate text to the set for the current image
-                plates_text.add(plate_text)
+                if plate_text.strip() != "":
+                    plates_text.add(plate_text.strip())
 
                 # Display each box with a label above it
-                multi_plot(boxes, labels, 1, len(boxes))
+                if __debug__:
+                    multi_plot(boxes, labels, 1, len(boxes))
 
         print "Detected plates in this picture:"
         for detected_text in plates_text:
             print detected_text
+        inp = raw_input("Press any key to continue to the next picture")
 
 if __name__ == '__main__':
     main()

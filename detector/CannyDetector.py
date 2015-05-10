@@ -64,10 +64,11 @@ class CannyDetector(AbstractDetector):
         if not min_area <= candidate_area <= max_area or not min_ratio <= candidate_ratio <= max_ratio:
             return False
         else:
-            print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
-            print "Candidate area: %f" % candidate_area
-            print "Candidate ratio: %f" % candidate_ratio
-            print "Passed\n"
+            if __debug__:
+                print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
+                print "Candidate area: %f" % candidate_area
+                print "Candidate ratio: %f" % candidate_ratio
+                print "Passed\n"
             return True
 
     def find_plates(self):

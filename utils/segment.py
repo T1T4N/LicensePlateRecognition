@@ -20,7 +20,8 @@ def segment_contours(plate):
     img_height, img_width = img.shape
     img_area = img_height * img_width
 
-    print "\n\nSegmenting contours\nPart area: %.3f" % img_area
+    if __debug__:
+        print "\nSegmenting contours\nPart area: %.3f" % img_area
 
     # Filter small noise points by filling them with black color
     contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -34,9 +35,8 @@ def segment_contours(plate):
 
             limit_ratio = 5.5
             limit_area = 45.0
-            if not (
-                                box_ratio < limit_ratio
-                        and box_height / float(box_width) < limit_ratio
+            if not (box_ratio < limit_ratio
+                    and box_height / float(box_width) < limit_ratio
                     and img_area / box_area < limit_area
             ) and float(img_area) / box_area > limit_area:
                 cv2.drawContours(img, [ct], 0, (0, 0, 0), thickness=-1)
@@ -59,18 +59,18 @@ def segment_contours(plate):
             if box_ratio < 1:
                 box_ratio = 1 / float(box_ratio)
 
-            print "Box width: %.3f, height: %.3f" % (box_width, box_height)
-            print "Box area: %.3f" % box_area
-            print "Box ratio: %.3f" % box_ratio
-            print "Area ratio: %.3f" % (img_area / box_area)
-
             # TODO: Square in the middle always caught, adjust box_ratio upper limit
             # TODO: Number 1 (one) has ratio ~ 4.5: very thin and high
             limit_ratio = 5.5
             limit_area = 45.0
             if box_ratio < limit_ratio and box_height / float(box_width) < limit_ratio \
                     and 4 < img_area / box_area < limit_area:
-                print "Passed\n"
+                if __debug__:
+                    print "Box width: %.3f, height: %.3f" % (box_width, box_height)
+                    print "Box area: %.3f" % box_area
+                    print "Box ratio: %.3f" % box_ratio
+                    print "Area ratio: %.3f" % (img_area / box_area)
+                    print "Passed\n"
 
                 # Experimental: fill contour with color
                 # cv2.drawContours(img, [ct], 0, (255, 255, 255), thickness=-1)

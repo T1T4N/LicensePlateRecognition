@@ -13,6 +13,10 @@ def deskew_lines(plate):
     :rtype: numpy.array
     :return: Gray image of the deskewed license plate
     """
+
+    if __debug__:
+        print "Deskewing lines"
+
     angle_rad = 0.0
 
     img = plate.copy()
@@ -64,7 +68,8 @@ def deskew_text(plate):
     :return: Gray image of the deskewed license plate
     """
 
-    print "Deskewing text"
+    if __debug__:
+        print "Deskewing text"
 
     img = plate.copy()
     # The below copy is used only to visualize the process
@@ -94,16 +99,16 @@ def deskew_text(plate):
             if box_ratio < 1:
                 box_ratio = 1 / box_ratio
 
-            print "Box width: %.3f, height: %.3f" % (box_width, box_height)
-            print "Box area: %.3f" % box_area
-            print "Box ratio: %.3f" % box_ratio
-            print "Image area / box_area: %.3f" % (img_area / box_area)
-
             # TODO: Adjust img/box area ratio
             limit_area = 58
             limit_ratio = 4.1
             if 0.5 < box_ratio < limit_ratio and 4 < img_area / box_area < limit_area:
-                print "Passed\n"
+                if __debug__:
+                    print "Box width: %.3f, height: %.3f" % (box_width, box_height)
+                    print "Box area: %.3f" % box_area
+                    print "Box ratio: %.3f" % box_ratio
+                    print "Image area / box_area: %.3f" % (img_area / box_area)
+                    print "Passed\n"
 
                 # Draw the box contours (for visualization only)
                 cv2.drawContours(disp_img, [box], 0, (0, 255, 0), 1)
