@@ -16,6 +16,8 @@ def main():
     print('OpenCV version: %s' % cv2.__version__)
 
     image_names = sorted(get_images_from_dir('main/images'))
+    if __debug__:
+        print(image_names)
     images = load_images(image_names)
 
     for i, src in enumerate(images):
