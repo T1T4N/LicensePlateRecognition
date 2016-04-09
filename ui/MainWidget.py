@@ -1,13 +1,17 @@
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QDesktopWidget, QGridLayout,
                              QGroupBox, QListWidget, QListWidgetItem, QAbstractItemView,
                              QCheckBox, QVBoxLayout, QFileDialog)
+from PyQt5.QtCore import QCoreApplication
 from detector import ThresholdBlurDetector, MorphologyTransformDetector, CannyDetector
 
 
 class MainWidget(QWidget):
     def __init__(self):
         super(MainWidget, self).__init__()
-        self.selected_files = []
+        self.selected_images = []
+        self.detector_checks = []
+        self.detector_map = {}
+        self.selected_detectors = []
         self.initUI()
 
     def initUI(self):
@@ -46,21 +50,27 @@ class MainWidget(QWidget):
         grp_detectors.setObjectName("grp_detectors")
         grp_detectors_layout = QVBoxLayout()
 
-        self.chk_canny = QCheckBox(grp_detectors)
-        self.chk_canny.setObjectName("chk_canny")
-        self.chk_canny.setText("CannyDetector")
-        grp_detectors_layout.addWidget(self.chk_canny)
+        chk_thresh = QCheckBox(grp_detectors)
+        chk_thresh.setObjectName("chk_thresh")
+        chk_thresh.setText("ThresholdBlurDetector")
+        chk_thresh.setChecked(True)
+        self.detector_checks.append(chk_thresh)
+        self.detector_map[chk_thresh] = ThresholdBlurDetector
+        grp_detectors_layout.addWidget(chk_thresh)
 
-        self.chk_morphology = QCheckBox(grp_detectors)
-        self.chk_morphology.setObjectName("chk_morphology")
-        self.chk_morphology.setText("MorphologyTransformDetector")
-        grp_detectors_layout.addWidget(self.chk_morphology)
+        chk_canny = QCheckBox(grp_detectors)
+        chk_canny.setObjectName("chk_canny")
+        chk_canny.setText("CannyDetector")
+        self.detector_checks.append(chk_canny)
+        self.detector_map[chk_canny] = CannyDetector
+        grp_detectors_layout.addWidget(chk_canny)
 
-        self.chk_thresh = QCheckBox(grp_detectors)
-        self.chk_thresh.setObjectName("chk_thresh")
-        self.chk_thresh.setText("ThresholdBlurDetector")
-        self.chk_thresh.setChecked(True)
-        grp_detectors_layout.addWidget(self.chk_thresh)
+        chk_morphology = QCheckBox(grp_detectors)
+        chk_morphology.setObjectName("chk_morphology")
+        chk_morphology.setText("MorphologyTransformDetector")
+        self.detector_checks.append(chk_morphology)
+        self.detector_map[chk_morphology] = MorphologyTransformDetector
+        grp_detectors_layout.addWidget(chk_morphology)
 
         grp_detectors.setLayout(grp_detectors_layout)
         grid_layout.addWidget(grp_detectors, 3, 0, 1, 1)
@@ -91,12 +101,21 @@ class MainWidget(QWidget):
         dialog_result = QFileDialog.getOpenFileNames(self, 'Open file', '.',
                                                      "JPEG (*.jpg *.jpeg);;All files (*.*);;PNG (*.png)")
         if dialog_result[0]:
-            self.selected_files = dialog_result[0]
+            self.selected_images = sorted(dialog_result[0])
             self.btn_process.setEnabled(True)
-            for file_path in self.selected_files:
+            for file_path in self.selected_images:
                 item = QListWidgetItem(file_path)
                 self.lst_images.addItem(item)
 
     def process_files(self):
+        if len(self.selected_images) > 0:
+            for check_box in self.detector_checks:
+                if check_box.isChecked():
+                    self.selected_detectors.append(self.detector_map[check_box])
+            if len(self.selected_detectors) > 0:
+                self.hide()
+                QCoreApplication.instance().quit()
 
+                from main import main
+                main(self.selected_images, self.selected_detectors)
         pass

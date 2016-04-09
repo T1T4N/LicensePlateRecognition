@@ -8,27 +8,29 @@ from utils.transform import deskew_lines, deskew_text
 from utils.segment import segment_contours
 from recognizer import TextRecognizer
 
-from PyQt5.QtWidgets import QApplication
-from ui import MainWidget
 
-
-def main():
+def main(image_names=None, selected_detectors=None):
     """
     Load images from a directory and process them to extract the license plate numbers
     """
 
     print('OpenCV version: %s' % cv2.__version__)
 
-    image_names = sorted(get_images_from_dir('main/images'))
+    if image_names is None:
+        image_names = sorted(get_images_from_dir('main/images'))
     if __debug__:
         print(image_names)
     images = load_images(image_names)
 
     for i, src in enumerate(images):
-        detectors = [ThresholdBlurDetector(src, image_names[i]),
-                     CannyDetector(src, image_names[i]),
-                     MorphologyTransformDetector(src, image_names[i])
-        ]
+        if selected_detectors is None:
+            detectors = [
+                ThresholdBlurDetector(src, image_names[i]),
+                CannyDetector(src, image_names[i]),
+                MorphologyTransformDetector(src, image_names[i])
+            ]
+        else:
+            detectors = [detector(src, image_names[i]) for detector in selected_detectors]
 
         plates_text = set([])
         for detector in detectors:
@@ -86,11 +88,24 @@ def main():
         print "Detected plates in this picture:"
         for detected_text in plates_text:
             print detected_text
-        inp = raw_input("Press any key to continue to the next picture")
+            # inp = raw_input("Press any key to continue to the next picture")
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    ex = MainWidget()
-    sys.exit(app.exec_())
+    import imp
 
-    # main()
+    # Check if PyQt5 exists and is accessible by python
+    try:
+        imp.find_module('PyQt5')
+        pyqt5_found = True
+    except ImportError:
+        pyqt5_found = False
+
+    if pyqt5_found:
+        from PyQt5.QtWidgets import QApplication
+        from ui import MainWidget
+
+        app = QApplication(sys.argv)
+        ex = MainWidget()
+        sys.exit(app.exec_())
+    else:
+        main()
