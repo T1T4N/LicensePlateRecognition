@@ -27,6 +27,9 @@ Under the mentorship of:
   * [python-tesseract](https://bitbucket.org/3togo/python-tesseract/downloads)
 5. Extract [tessdata](https://drive.google.com/file/d/0B61RgxZKvD2JT011cWluN3JMMUk/view?usp=sharing) in the main folder
 6. Place pictures on which to perform detection in the main/images folder, or you can download [my test pictures](https://drive.google.com/file/d/0B61RgxZKvD2JOVZTZjY1OHVMTmc/view?usp=sharing)
-7. Enter the project directory and run the following commands:
+7. OPTIONAL, to use the GUI:
+  * Install (or build from source) [sip](https://www.riverbankcomputing.com/software/sip/download)
+  * Install (or build from source) [PyQt5](https://www.riverbankcomputing.com/software/pyqt/download5)
+8. Enter the project directory and run the following commands:
   * export PYTHONPATH=$PYTHONPATH:.
   * python main/main.py
