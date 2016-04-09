@@ -1,4 +1,5 @@
 import cv2
+import sys
 
 from detector import ThresholdBlurDetector, MorphologyTransformDetector, CannyDetector
 from utils.loader import load_images, get_images_from_dir
@@ -6,6 +7,9 @@ from utils.display import display_rectangles, show_image, multi_plot
 from utils.transform import deskew_lines, deskew_text
 from utils.segment import segment_contours
 from recognizer import TextRecognizer
+
+from PyQt5.QtWidgets import QApplication
+from ui import MainWidget
 
 
 def main():
@@ -85,4 +89,8 @@ def main():
         inp = raw_input("Press any key to continue to the next picture")
 
 if __name__ == '__main__':
-    main()
+    app = QApplication(sys.argv)
+    ex = MainWidget()
+    sys.exit(app.exec_())
+
+    # main()
