@@ -1,5 +1,9 @@
 .idea
+main/tessdata
 
+*.pyc
+*.pyo
 *.class
 *.jar
+
 main/images/*.jpg
