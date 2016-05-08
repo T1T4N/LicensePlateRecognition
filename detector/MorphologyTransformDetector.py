@@ -64,10 +64,10 @@ class MorphologyTransformDetector(AbstractDetector):
             return False
         else:
             if __debug__:
-                print "Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height)
-                print "Candidate area: %f" % candidate_area
-                print "Candidate ratio: %f" % candidate_ratio
-                print "Passed\n"
+                print("Candidate width: %.3f, height: %.3f" % (candidate_width, candidate_height))
+                print("Candidate area: %f" % candidate_area)
+                print("Candidate ratio: %f" % candidate_ratio)
+                print("Passed\n")
             return True
 
     def find_plates(self):

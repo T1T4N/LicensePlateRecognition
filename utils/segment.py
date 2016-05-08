@@ -21,7 +21,7 @@ def segment_contours(plate):
     img_area = img_height * img_width
 
     if __debug__:
-        print "\nSegmenting contours\nPart area: %.3f" % img_area
+        print("\nSegmenting contours\nPart area: %.3f" % img_area)
 
     # Filter small noise points by filling them with black color
     contours, hierarchy = cv2.findContours(img.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -66,11 +66,11 @@ def segment_contours(plate):
             if box_ratio < limit_ratio and box_height / float(box_width) < limit_ratio \
                     and 4 < img_area / box_area < limit_area:
                 if __debug__:
-                    print "Box width: %.3f, height: %.3f" % (box_width, box_height)
-                    print "Box area: %.3f" % box_area
-                    print "Box ratio: %.3f" % box_ratio
-                    print "Area ratio: %.3f" % (img_area / box_area)
-                    print "Passed\n"
+                    print("Box width: %.3f, height: %.3f" % (box_width, box_height))
+                    print("Box area: %.3f" % box_area)
+                    print("Box ratio: %.3f" % box_ratio)
+                    print("Area ratio: %.3f" % (img_area / box_area))
+                    print("Passed\n")
 
                 # Experimental: fill contour with color
                 # cv2.drawContours(img, [ct], 0, (255, 255, 255), thickness=-1)
@@ -111,6 +111,6 @@ def segment_contours(plate):
     boxes_sorted = sorted(boxes, key=lambda item: (item[0][0], item[0][1]))
     boxes_sep = display.get_parts_of_image(img, boxes_sorted)
     if __debug__:
-        display.show_image(disp_img)
+        display.show_image(disp_img, resize=False)
 
     return [cv2.cvtColor(box, cv2.COLOR_GRAY2BGR) for box in boxes_sep]

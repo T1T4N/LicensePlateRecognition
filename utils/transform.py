@@ -15,7 +15,7 @@ def deskew_lines(plate):
     """
 
     if __debug__:
-        print "Deskewing lines"
+        print("Deskewing lines")
 
     angle_rad = 0.0
 
@@ -25,7 +25,7 @@ def deskew_lines(plate):
     height, width = img.shape
 
     if __debug__:
-        display.show_image(disp_img, resize=True)
+        display.show_image(disp_img, resize=False)
 
     # Detect lines in the image
     lines = cv2.HoughLinesP(img, 1, np.pi / 180, 100, minLineLength=3 * width / 4, maxLineGap=20)
@@ -48,13 +48,13 @@ def deskew_lines(plate):
         # print "Avg angle deg: %.3f\n" % angle
 
         if __debug__:
-            display.show_image(disp_img, resize=True)
+            display.show_image(disp_img, resize=False)
 
         rotation_mat = cv2.getRotationMatrix2D((width / 2, height / 2), angle, 1)
         img = cv2.warpAffine(img, rotation_mat, (width, height))
         disp_img = cv2.warpAffine(disp_img, rotation_mat, (width, height))
         if __debug__:
-            display.show_image(disp_img, resize=True)
+            display.show_image(disp_img, resize=False)
     return img
 
 
@@ -69,7 +69,7 @@ def deskew_text(plate):
     """
 
     if __debug__:
-        print "Deskewing text"
+        print("Deskewing text")
 
     img = plate.copy()
     # The below copy is used only to visualize the process
@@ -104,11 +104,11 @@ def deskew_text(plate):
             limit_ratio = 4.1
             if 0.5 < box_ratio < limit_ratio and 4 < img_area / box_area < limit_area:
                 if __debug__:
-                    print "Box width: %.3f, height: %.3f" % (box_width, box_height)
-                    print "Box area: %.3f" % box_area
-                    print "Box ratio: %.3f" % box_ratio
-                    print "Image area / box_area: %.3f" % (img_area / box_area)
-                    print "Passed\n"
+                    print("Box width: %.3f, height: %.3f" % (box_width, box_height))
+                    print("Box area: %.3f" % box_area)
+                    print("Box ratio: %.3f" % box_ratio)
+                    print("Image area / box_area: %.3f" % (img_area / box_area))
+                    print("Passed\n")
 
                 # Draw the box contours (for visualization only)
                 cv2.drawContours(disp_img, [box], 0, (0, 255, 0), 1)
@@ -217,8 +217,8 @@ def deskew_text(plate):
         cv2.circle(disp_img, top_right, 1, (255, 0, 0), thickness=2)
 
         if __debug__:
-            display.show_image(disp_img)
-            display.show_image(disp_wrapped)
+            display.show_image(disp_img, resize=False)
+            display.show_image(disp_wrapped, resize=False)
         return disp_wrapped
 
     return img
